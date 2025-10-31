@@ -40,28 +40,28 @@ export default function SignUpPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="min-h-screen flex items-center justify-center bg-background px-4">
             <div className="w-full max-w-md space-y-8">
                 <div className="text-center">
-                    <h2 className="text-3xl font-bold">Create your account</h2>
-                    <p className="mt-2 text-gray-600">
+                    <h2 className="text-3xl font-bold text-foreground">Create your account</h2>
+                    <p className="mt-2 text-muted-foreground">
                         Already have an account?{" "}
-                        <a href="/sign-in" className="text-blue-600 hover:underline">
+                        <a href="/sign-in" className="text-primary hover:underline">
                             Sign in
                         </a>
                     </p>
                 </div>
 
-                <div className="bg-white p-8 rounded-lg shadow-md space-y-6">
+                <div className="bg-card p-8 rounded-lg shadow-md space-y-6 border">
                     {/* OAuth Buttons */}
                     <OAuthButtons />
 
                     <div className="relative">
                         <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-gray-300" />
+                            <div className="w-full border-t border-border" />
                         </div>
                         <div className="relative flex justify-center text-sm">
-                            <span className="px-2 bg-white text-gray-500">
+                            <span className="px-2 bg-card text-muted-foreground">
                                 Or continue with email
                             </span>
                         </div>
@@ -70,7 +70,7 @@ export default function SignUpPage() {
                     {/* Email/Password Form */}
                     <form onSubmit={handleEmailSignUp} className="space-y-4">
                         {error && (
-                            <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+                            <div className="bg-destructive/10 text-destructive p-3 rounded-md text-sm border border-destructive/20">
                                 {error}
                             </div>
                         )}
@@ -78,7 +78,7 @@ export default function SignUpPage() {
                         <div>
                             <label
                                 htmlFor="name"
-                                className="block text-sm font-medium text-gray-700 mb-1"
+                                className="block text-sm font-medium text-foreground mb-1"
                             >
                                 Full name
                             </label>
@@ -88,7 +88,7 @@ export default function SignUpPage() {
                                 required
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                                 placeholder="John Doe"
                             />
                         </div>
@@ -96,7 +96,7 @@ export default function SignUpPage() {
                         <div>
                             <label
                                 htmlFor="email"
-                                className="block text-sm font-medium text-gray-700 mb-1"
+                                className="block text-sm font-medium text-foreground mb-1"
                             >
                                 Email address
                             </label>
@@ -106,7 +106,7 @@ export default function SignUpPage() {
                                 required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                                 placeholder="you@example.com"
                             />
                         </div>
@@ -114,7 +114,7 @@ export default function SignUpPage() {
                         <div>
                             <label
                                 htmlFor="password"
-                                className="block text-sm font-medium text-gray-700 mb-1"
+                                className="block text-sm font-medium text-foreground mb-1"
                             >
                                 Password
                             </label>
@@ -124,11 +124,11 @@ export default function SignUpPage() {
                                 required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                                 placeholder="••••••••"
                                 minLength={8}
                             />
-                            <p className="mt-1 text-xs text-gray-500">
+                            <p className="mt-1 text-xs text-muted-foreground">
                                 Must be at least 8 characters
                             </p>
                         </div>

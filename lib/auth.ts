@@ -28,5 +28,6 @@ export const auth = betterAuth({
                 },
             }),
     },
+    trustedOrigins: ["http://localhost:3000", "http://localhost:3001"],
     plugins: [nextCookies()], // make sure this is the last plugin in the array
 });

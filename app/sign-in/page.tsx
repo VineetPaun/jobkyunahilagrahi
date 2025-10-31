@@ -38,28 +38,28 @@ export default function SignInPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="min-h-screen flex items-center justify-center bg-background px-4">
             <div className="w-full max-w-md space-y-8">
                 <div className="text-center">
-                    <h2 className="text-3xl font-bold">Sign in to your account</h2>
-                    <p className="mt-2 text-gray-600">
+                    <h2 className="text-3xl font-bold text-foreground">Sign in to your account</h2>
+                    <p className="mt-2 text-muted-foreground">
                         Or{" "}
-                        <a href="/sign-up" className="text-blue-600 hover:underline">
+                        <a href="/sign-up" className="text-primary hover:underline">
                             create a new account
                         </a>
                     </p>
                 </div>
 
-                <div className="bg-white p-8 rounded-lg shadow-md space-y-6">
+                <div className="bg-card p-8 rounded-lg shadow-md space-y-6 border">
                     {/* OAuth Buttons */}
                     <OAuthButtons />
 
                     <div className="relative">
                         <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-gray-300" />
+                            <div className="w-full border-t border-border" />
                         </div>
                         <div className="relative flex justify-center text-sm">
-                            <span className="px-2 bg-white text-gray-500">
+                            <span className="px-2 bg-card text-muted-foreground">
                                 Or continue with email
                             </span>
                         </div>
@@ -68,7 +68,7 @@ export default function SignInPage() {
                     {/* Email/Password Form */}
                     <form onSubmit={handleEmailSignIn} className="space-y-4">
                         {error && (
-                            <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+                            <div className="bg-destructive/10 text-destructive p-3 rounded-md text-sm border border-destructive/20">
                                 {error}
                             </div>
                         )}
@@ -76,7 +76,7 @@ export default function SignInPage() {
                         <div>
                             <label
                                 htmlFor="email"
-                                className="block text-sm font-medium text-gray-700 mb-1"
+                                className="block text-sm font-medium text-foreground mb-1"
                             >
                                 Email address
                             </label>
@@ -86,7 +86,7 @@ export default function SignInPage() {
                                 required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                                 placeholder="you@example.com"
                             />
                         </div>
@@ -94,7 +94,7 @@ export default function SignInPage() {
                         <div>
                             <label
                                 htmlFor="password"
-                                className="block text-sm font-medium text-gray-700 mb-1"
+                                className="block text-sm font-medium text-foreground mb-1"
                             >
                                 Password
                             </label>
@@ -104,7 +104,7 @@ export default function SignInPage() {
                                 required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                                 placeholder="••••••••"
                             />
                         </div>
