@@ -18,7 +18,7 @@ import {
 
 const menuItems = [
     { name: 'Dashboard', href: '/dashboard' },
-    { name: 'Profile', href: '/profile' }
+    // { name: 'Profile', href: '/profile' }
 ]
 
 export const Header = () => {
@@ -119,9 +119,9 @@ export const Header = () => {
                                         <DropdownMenuTrigger asChild>
                                             <LiquidButton
                                                 variant="default"
-                                                size="sm"
-                                                className="gap-2">
-                                                <User className="size-4" />
+                                                size="lg"
+                                                className="gap-2 h-12 px-6">
+                                                <User className="size-5" />
                                                 <span className="hidden sm:inline">
                                                     {session.user.name || session.user.email}
                                                 </span>
@@ -195,9 +195,9 @@ export const Header = () => {
                                             <DropdownMenuTrigger asChild>
                                                 <LiquidButton
                                                     variant="default"
-                                                    size="sm"
-                                                    className="gap-2 w-full">
-                                                    <User className="size-4" />
+                                                    size="lg"
+                                                    className="gap-2 w-full h-12 px-6">
+                                                    <User className="size-5" />
                                                     <span>
                                                         {session.user.name || session.user.email}
                                                     </span>

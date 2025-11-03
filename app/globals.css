@@ -242,91 +242,165 @@
     }
 }
 
-/* Liquid Glass Switcher Styles */
-.switcher {
-    --c: oklch(0.25 0 0);
+/* Liquid Glass Toggle Styles */
+.liquid-toggle__fieldset {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.liquid-toggle__legend {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+.liquid-toggle {
     position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 0.15rem;
-    padding: 0.15rem;
-    border-radius: 1.25rem;
-    background: var(--glass-surface-bg);
-    backdrop-filter: blur(12px);
-    border: 1px solid var(--glass-surface-border);
-    box-shadow: var(--glass-surface-shadow);
-    width: fit-content;
-}
-
-.dark .switcher {
-    --c: oklch(0.85 0 0);
-}
-
-.switcher__legend {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border-width: 0;
-}
-
-.switcher__option {
-    position: relative;
-    display: flex;
-    align-items: center;
     justify-content: center;
-    width: 1.75rem;
-    height: 1.75rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
+    gap: 0.35rem;
+    padding: 0.25rem;
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--glass-surface-bg) 80%, transparent);
+    border: 1px solid var(--glass-surface-border);
+    backdrop-filter: blur(10px) saturate(130%);
+    box-shadow: var(--glass-highlight-shadow);
+    isolation: isolate;
 }
 
-.switcher__input {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border-width: 0;
-}
-
-.switcher__icon {
-    width: 0.875rem;
-    height: 0.875rem;
-    transition: all 0.2s ease;
-    filter: url(#toggler);
-}
-
-.switcher__input:checked + .switcher__icon {
-    filter: url(#switcher);
-}
-
-.switcher__filter {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 0;
-    height: 0;
-    overflow: hidden;
+.liquid-toggle--static {
     pointer-events: none;
 }
 
-.switcher__option:has(.switcher__input:checked)::before {
+.liquid-toggle__item {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    background: color-mix(
+        in srgb,
+        var(--glass-surface-highlight) 12%,
+        transparent
+    );
+    color: var(--muted-foreground);
+    transition: color 0.25s ease, transform 0.25s ease, border-color 0.25s ease,
+        box-shadow 0.25s ease;
+    cursor: pointer;
+    isolation: isolate;
+    outline: none;
+}
+
+.liquid-toggle__item::after {
     content: "";
     position: absolute;
     inset: 0;
-    border-radius: 0.875rem;
-    background: var(--glass-surface-highlight);
-    box-shadow: var(--glass-highlight-shadow);
+    border-radius: inherit;
+    background: linear-gradient(
+        150deg,
+        rgba(255, 255, 255, 0.65),
+        rgba(255, 255, 255, 0.15)
+    );
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    mix-blend-mode: soft-light;
+    pointer-events: none;
+}
+
+.liquid-toggle__item .liquid-toggle__glow {
+    position: absolute;
+    inset: 0.25rem;
+    border-radius: inherit;
+    background: radial-gradient(
+        120% 130% at 20% 20%,
+        rgba(255, 255, 255, 0.7),
+        transparent 70%
+    );
+    filter: url(#radio-glass);
+    opacity: 0;
+    transform: scale(0.75);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    pointer-events: none;
     z-index: -1;
-    animation: scaleIn 0.2s ease;
+}
+
+.liquid-toggle__item .liquid-toggle__icon {
+    width: 1.1rem;
+    height: 1.1rem;
+    transition: transform 0.25s ease;
+    filter: none;
+}
+
+.liquid-toggle__item > span:last-child {
+    display: none;
+}
+
+.liquid-toggle__item[data-state="checked"] {
+    color: var(--foreground);
+    border-color: color-mix(
+        in srgb,
+        var(--glass-surface-highlight) 65%,
+        transparent
+    );
+    box-shadow: var(--glass-highlight-shadow);
+    transform: translateY(-1px);
+}
+
+.liquid-toggle__item[data-state="checked"]::after {
+    opacity: 1;
+}
+
+.liquid-toggle__item[data-state="checked"] .liquid-toggle__glow {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.liquid-toggle__item[data-state="checked"] .liquid-toggle__icon {
+    transform: scale(1.08);
+}
+
+.liquid-toggle__item:hover,
+.liquid-toggle__item:focus-visible {
+    color: var(--foreground);
+}
+
+.liquid-toggle__item:hover .liquid-toggle__glow,
+.liquid-toggle__item:focus-visible .liquid-toggle__glow {
+    opacity: 0.7;
+    transform: scale(0.95);
+}
+
+.liquid-toggle__item:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+}
+
+.liquid-toggle__item--placeholder {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.dark .liquid-toggle {
+    background: color-mix(in srgb, var(--glass-surface-bg) 60%, transparent);
+}
+
+.dark .liquid-toggle__item {
+    background: color-mix(
+        in srgb,
+        var(--glass-surface-highlight) 6%,
+        transparent
+    );
 }
 
 .liquid-button {
@@ -438,15 +512,4 @@
 .glass-menu__item--stacked {
     justify-content: flex-start;
     width: 100%;
-}
-
-@keyframes scaleIn {
-    from {
-        transform: scale(0.8);
-        opacity: 0;
-    }
-    to {
-        transform: scale(1);
-        opacity: 1;
-    }
 }
