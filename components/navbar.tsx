@@ -1,12 +1,12 @@
 'use client'
 import Link from 'next/link'
 import { Equal, X, LogOut, User } from 'lucide-react'
-import { Button } from '@/components/liquid-glass-button'
+import { LiquidButton } from '@/components/liquid-glass-button'
 import React from 'react'
 import { cn } from '@/lib/utils'
-import { Theme } from '@/components/theme'
+import { ThemeSwitcher } from '@/components/ui/apple-liquid-glass-switcher'
 import { authClient } from '@/lib/auth-client'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -17,10 +17,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 const menuItems = [
-    { name: 'Products', href: '#link' },
-    { name: 'Designs', href: '#link' },
-    { name: 'Pricing', href: '#link' },
-    { name: 'About', href: '#link' },
+    { name: 'Dashboard', href: '/dashboard' },
+    { name: 'Profile', href: '/profile' }
 ]
 
 export const Header = () => {
@@ -29,6 +27,7 @@ export const Header = () => {
     const [session, setSession] = React.useState<any>(null)
     const [loading, setLoading] = React.useState(true)
     const router = useRouter()
+    const pathname = usePathname()
 
     React.useEffect(() => {
         const handleScroll = () => {
@@ -57,9 +56,10 @@ export const Header = () => {
             <nav
                 data-state={menuState && 'active'}
                 className="fixed left-0 w-full z-20 px-2">
-                <div className={cn('mx-auto mt-2 max-w-6xl px-6 transition-all duration-300 lg:px-12', isScrolled && 'bg-background/50 max-w-4xl rounded-2xl border backdrop-blur-lg lg:px-5')}>
-                    <div className="relative flex flex-wrap items-center justify-between gap-6 lg:gap-0 py-2">
-                        <div className="flex w-full justify-between lg:w-auto">
+                <div className={cn('mx-auto mt-2 max-w-7xl px-6 transition-all duration-300 lg:px-8', isScrolled && 'bg-background/80 max-w-6xl rounded-2xl border backdrop-blur-lg')}>
+                    <div className="relative flex items-center justify-between py-3">
+                        {/* Logo */}
+                        <div className="flex items-center">
                             <Link
                                 href="/"
                                 aria-label="home"
@@ -74,65 +74,134 @@ export const Header = () => {
                                         fill="#fff200"
                                         d="M268.08,0c-27.4,0-51.41,4.43-72.07,13.26C175.36,4.43,151.35,0,123.95,0H0v324.6h123.95c27.37,0,51.38-4.58,72.07-13.7,20.69,9.12,44.7,13.7,72.07,13.7h123.95V0h-123.95ZM324.09,268.36h-47.91c-20.25,0-37.3-4.05-51.18-12.15-12.28-7.17-21.94-17.41-28.99-30.7h0s0,0,0,0c0,0,0,0,0,0h0c-7.05,13.29-16.71,23.53-28.99,30.7-13.87,8.1-30.93,12.15-51.18,12.15h-47.91V56.24h47.91c19.8,0,36.67,4.01,50.61,12.04,12.51,7.2,22.35,17.47,29.55,30.77h0s0,0,0,0c0,0,0,0,0,0h0c7.2-13.3,17.04-23.57,29.55-30.77,13.95-8.02,30.82-12.04,50.61-12.04h47.91v212.13Z"></path>
                                 </svg>
-                                <p className='font-semibold text-xl tracking-tighter'> JobKyuNahiLagRahi</p>
+                                <p className='text-2xl tracking-wide font-medium'>
+                                    JobKyuNahiLagRahi
+                                </p>
                             </Link>
-
-                            <button
-                                onClick={() => setMenuState(!menuState)}
-                                aria-label={menuState == true ? 'Close Menu' : 'Open Menu'}
-                                className="relative z-20 -m-2.5 -mr-4 block cursor-pointer p-2.5 lg:hidden">
-                                <Equal className="in-data-[state=active]:rotate-180 in-data-[state=active]:scale-0 in-data-[state=active]:opacity-0 m-auto size-6 duration-200" />
-                                <X className="in-data-[state=active]:rotate-0 in-data-[state=active]:scale-100 in-data-[state=active]:opacity-100 absolute inset-0 m-auto size-6 -rotate-180 scale-0 opacity-0 duration-200" />
-                            </button>
                         </div>
 
-                        <div className="absolute inset-0 m-auto hidden size-fit lg:block">
-                            <ul className="flex gap-8 text-sm">
-                                {menuItems.map((item, index) => (
-                                    <li key={index}>
-                                        <Link
-                                            href={item.href}
-                                            className="text-muted-foreground hover:text-accent-foreground block duration-150">
-                                            <span>{item.name}</span>
-                                        </Link>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                        {/* Mobile Menu Button */}
+                        <button
+                            onClick={() => setMenuState(!menuState)}
+                            aria-label={menuState == true ? 'Close Menu' : 'Open Menu'}
+                            className="lg:hidden relative z-20 cursor-pointer p-2">
+                            <Equal className="in-data-[state=active]:rotate-180 in-data-[state=active]:scale-0 in-data-[state=active]:opacity-0 m-auto size-6 duration-200" />
+                            <X className="in-data-[state=active]:rotate-0 in-data-[state=active]:scale-100 in-data-[state=active]:opacity-100 absolute inset-0 m-auto size-6 -rotate-180 scale-0 opacity-0 duration-200" />
+                        </button>
 
-                        <div className="bg-background in-data-[state=active]:block lg:in-data-[state=active]:flex mb-6 hidden w-full flex-wrap items-center justify-end space-y-8 rounded-3xl border p-6 shadow-2xl shadow-zinc-300/20 md:flex-nowrap lg:m-0 lg:flex lg:w-fit lg:gap-6 lg:space-y-0 lg:border-transparent lg:bg-transparent lg:p-0 lg:shadow-none dark:shadow-none dark:lg:bg-transparent">
-                            <div className="lg:hidden">
-                                <ul className="space-y-6 text-base">
-                                    {menuItems.map((item, index) => (
+                        {/* Desktop Menu - Center */}
+                        <div className="hidden lg:flex lg:absolute lg:left-1/2 lg:-translate-x-1/2">
+                            <ul className="glass-menu">
+                                {menuItems.map((item, index) => {
+                                    const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`)
+
+                                    return (
                                         <li key={index}>
                                             <Link
                                                 href={item.href}
-                                                className="text-muted-foreground hover:text-accent-foreground block duration-150">
-                                                <span>{item.name}</span>
+                                                className={cn('glass-menu__item text-sm', isActive && 'glass-menu__item--active')}
+                                                aria-current={isActive ? 'page' : undefined}
+                                            >
+                                                {item.name}
                                             </Link>
                                         </li>
-                                    ))}
+                                    )
+                                })}
+                            </ul>
+                        </div>
+
+                        {/* Right Side - Theme Switcher & Auth Buttons */}
+                        <div className="hidden lg:flex items-center gap-3">
+                            <ThemeSwitcher />
+                            {!loading && (
+                                session ? (
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <LiquidButton
+                                                variant="default"
+                                                size="sm"
+                                                className="gap-2">
+                                                <User className="size-4" />
+                                                <span className="hidden sm:inline">
+                                                    {session.user.name || session.user.email}
+                                                </span>
+                                            </LiquidButton>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="w-56">
+                                            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem asChild>
+                                                <Link href="/dashboard" className="cursor-pointer">
+                                                    Dashboard
+                                                </Link>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem
+                                                onClick={handleSignOut}
+                                                className="cursor-pointer text-destructive focus:text-destructive">
+                                                <LogOut className="mr-2 size-4" />
+                                                Sign Out
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                ) : (
+                                    <>
+                                        <LiquidButton
+                                            asChild
+                                            variant="default"
+                                            size="sm">
+                                            <Link href="/sign-in">
+                                                <span>Sign In</span>
+                                            </Link>
+                                        </LiquidButton>
+                                        <LiquidButton
+                                            asChild
+                                            size="sm">
+                                            <Link href="/sign-up">
+                                                <span>Sign Up</span>
+                                            </Link>
+                                        </LiquidButton>
+                                    </>
+                                )
+                            )}
+                        </div>
+
+                        {/* Mobile Menu */}
+                        <div className="bg-background in-data-[state=active]:block absolute top-full left-0 right-0 mt-2 hidden w-full rounded-2xl border p-6 shadow-2xl backdrop-blur-lg lg:hidden">
+                            <div>
+                                <ul className={cn('glass-menu glass-menu--stacked mb-6 text-base')}>
+                                    {menuItems.map((item, index) => {
+                                        const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`)
+
+                                        return (
+                                            <li key={index}>
+                                                <Link
+                                                    href={item.href}
+                                                    className={cn('glass-menu__item glass-menu__item--stacked', isActive && 'glass-menu__item--active')}
+                                                    aria-current={isActive ? 'page' : undefined}
+                                                >
+                                                    {item.name}
+                                                </Link>
+                                            </li>
+                                        )
+                                    })}
                                 </ul>
                             </div>
-                            <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-2 sm:space-y-0 md:w-fit md:items-center">
-                                <Theme
-                                    variant="tabs"
-                                    size="sm"
-                                    themes={["light", "dark", "system"]}
-                                />
+                            <div className="flex flex-col space-y-3">
+                                <ThemeSwitcher />
                                 {!loading && (
                                     session ? (
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                <Button
-                                                    variant="outline"
+                                                <LiquidButton
+                                                    variant="default"
                                                     size="sm"
-                                                    className="gap-2">
+                                                    className="gap-2 w-full">
                                                     <User className="size-4" />
-                                                    <span className="hidden sm:inline">
+                                                    <span>
                                                         {session.user.name || session.user.email}
                                                     </span>
-                                                </Button>
+                                                </LiquidButton>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end" className="w-56">
                                                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
@@ -153,21 +222,23 @@ export const Header = () => {
                                         </DropdownMenu>
                                     ) : (
                                         <>
-                                            <Button
+                                            <LiquidButton
                                                 asChild
-                                                variant="outline"
-                                                size="sm">
+                                                variant="default"
+                                                size="sm"
+                                                className="w-full">
                                                 <Link href="/sign-in">
                                                     <span>Sign In</span>
                                                 </Link>
-                                            </Button>
-                                            <Button
+                                            </LiquidButton>
+                                            <LiquidButton
                                                 asChild
-                                                size="sm">
+                                                size="sm"
+                                                className="w-full">
                                                 <Link href="/sign-up">
                                                     <span>Sign Up</span>
                                                 </Link>
-                                            </Button>
+                                            </LiquidButton>
                                         </>
                                     )
                                 )}
