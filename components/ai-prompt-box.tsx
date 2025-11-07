@@ -1,5 +1,4 @@
 "use client";
-
 import React from "react";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
@@ -22,11 +21,11 @@ const styles = `
     background: transparent;
   }
   textarea::-webkit-scrollbar-thumb {
-    background-color: #444444;
+    background-color: var(--color-border);
     border-radius: 3px;
   }
   textarea::-webkit-scrollbar-thumb:hover {
-    background-color: #555555;
+    background-color: var(--color-muted-foreground);
   }
 `;
 
@@ -47,7 +46,7 @@ interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(({ className, ...props }, ref) => (
   <textarea
     className={cn(
-      "flex w-full rounded-md border-none bg-transparent px-3 py-2.5 text-base text-gray-100 placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] resize-none scrollbar-thin scrollbar-thumb-[#444444] scrollbar-track-transparent hover:scrollbar-thumb-[#555555]",
+      "flex w-full rounded-md border-none bg-transparent px-3 py-2.5 text-base text-(--color-foreground) placeholder:text-(--color-muted-foreground) focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] resize-none",
       className
     )}
     ref={ref}
@@ -213,13 +212,13 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
     >
       <div className="flex items-center gap-2 mb-3">
         <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-        <span className="font-mono text-sm text-white/80">{formatTime(time)}</span>
+        <span className="font-mono text-sm text-black/70 dark:text-white/80">{formatTime(time)}</span>
       </div>
       <div className="w-full h-10 flex items-center justify-center gap-0.5 px-4">
         {[...Array(visualizerBars)].map((_, i) => (
           <div
             key={i}
-            className="w-0.5 rounded-full bg-white/50 animate-pulse"
+            className="w-0.5 rounded-full animate-pulse bg-black/20 dark:bg-white/50"
             style={{
               height: `${Math.max(15, Math.random() * 100)}%`,
               animationDelay: `${i * 0.05}s`,
@@ -334,7 +333,7 @@ const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
           <div
             ref={ref}
             className={cn(
-              "rounded-3xl border border-[#444444] bg-[#1F2023] p-2 shadow-[0_8px_30px_rgba(0,0,0,0.24)] transition-all duration-300",
+              "rounded-3xl border border-(--color-border) bg-(--color-card) p-2 text-(--color-foreground) shadow-[0_8px_30px_rgba(0,0,0,0.24)] transition-all duration-300",
               isLoading && "border-red-500/70",
               className
             )}
@@ -433,7 +432,7 @@ const PromptInputAction: React.FC<PromptInputActionProps> = ({
 const CustomDivider: React.FC = () => (
   <div className="relative h-6 w-[1.5px] mx-1">
     <div
-      className="absolute inset-0 bg-gradient-to-t from-transparent via-[#9b87f5]/70 to-transparent rounded-full"
+      className="absolute inset-0 bg-linear-to-t from-transparent via-[#9b87f5]/70 to-transparent rounded-full"
       style={{
         clipPath: "polygon(0% 0%, 100% 0%, 100% 40%, 140% 50%, 100% 60%, 100% 100%, 0% 100%, 0% 60%, -40% 50%, 0% 40%)",
       }}
@@ -575,7 +574,7 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
         isLoading={isLoading}
         onSubmit={handleSubmit}
         className={cn(
-          "w-full bg-[#1F2023] border-[#444444] shadow-[0_8px_30px_rgba(0,0,0,0.24)] transition-all duration-300 ease-in-out",
+          "w-full bg-(--color-card) border-(--color-border) text-(--color-foreground) shadow-[0_8px_30px_rgba(0,0,0,0.24)] transition-all duration-300 ease-in-out",
           isRecording && "border-red-500/70",
           className
         )}
@@ -653,7 +652,7 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
             <PromptInputAction tooltip="Upload image">
               <button
                 onClick={() => uploadInputRef.current?.click()}
-                className="flex h-8 w-8 text-[#9CA3AF] cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-gray-600/30 hover:text-[#D1D5DB]"
+                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-(--color-muted-foreground) transition-colors hover:bg-foreground/10 hover:text-(--color-foreground)"
                 disabled={isRecording}
               >
                 <Paperclip className="h-5 w-5 transition-colors" />
@@ -675,13 +674,13 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
                 type="button"
                 onClick={() => handleToggleChange("search")}
                 className={cn(
-                  "rounded-full transition-all flex items-center gap-1 px-2 py-1 border h-8",
+                  "flex h-8 items-center gap-1 rounded-full border px-2 py-1 transition-all",
                   showSearch
                     ? "bg-[#1EAEDB]/15 border-[#1EAEDB] text-[#1EAEDB]"
-                    : "bg-transparent border-transparent text-[#9CA3AF] hover:text-[#D1D5DB]"
+                    : "border-transparent bg-transparent text-(--color-muted-foreground) hover:text-(--color-foreground)"
                 )}
               >
-                <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                <div className="w-5 h-5 flex items-center justify-center shrink-0">
                   <motion.div
                     animate={{ rotate: showSearch ? 360 : 0, scale: showSearch ? 1.1 : 1 }}
                     whileHover={{ rotate: showSearch ? 360 : 15, scale: 1.1, transition: { type: "spring", stiffness: 300, damping: 10 } }}
@@ -697,7 +696,7 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
                       animate={{ width: "auto", opacity: 1 }}
                       exit={{ width: 0, opacity: 0 }}
                       transition={{ duration: 0.2 }}
-                      className="text-xs overflow-hidden whitespace-nowrap text-[#1EAEDB] flex-shrink-0"
+                      className="text-xs overflow-hidden whitespace-nowrap text-[#1EAEDB] shrink-0"
                     >
                       Search
                     </motion.span>
@@ -711,13 +710,13 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
                 type="button"
                 onClick={() => handleToggleChange("think")}
                 className={cn(
-                  "rounded-full transition-all flex items-center gap-1 px-2 py-1 border h-8",
+                  "flex h-8 items-center gap-1 rounded-full border px-2 py-1 transition-all",
                   showThink
                     ? "bg-[#8B5CF6]/15 border-[#8B5CF6] text-[#8B5CF6]"
-                    : "bg-transparent border-transparent text-[#9CA3AF] hover:text-[#D1D5DB]"
+                    : "border-transparent bg-transparent text-(--color-muted-foreground) hover:text-(--color-foreground)"
                 )}
               >
-                <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                <div className="w-5 h-5 flex items-center justify-center shrink-0">
                   <motion.div
                     animate={{ rotate: showThink ? 360 : 0, scale: showThink ? 1.1 : 1 }}
                     whileHover={{ rotate: showThink ? 360 : 15, scale: 1.1, transition: { type: "spring", stiffness: 300, damping: 10 } }}
@@ -733,7 +732,7 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
                       animate={{ width: "auto", opacity: 1 }}
                       exit={{ width: 0, opacity: 0 }}
                       transition={{ duration: 0.2 }}
-                      className="text-xs overflow-hidden whitespace-nowrap text-[#8B5CF6] flex-shrink-0"
+                      className="text-xs overflow-hidden whitespace-nowrap text-[#8B5CF6] shrink-0"
                     >
                       Think
                     </motion.span>
@@ -747,13 +746,13 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
                 type="button"
                 onClick={handleCanvasToggle}
                 className={cn(
-                  "rounded-full transition-all flex items-center gap-1 px-2 py-1 border h-8",
+                  "flex h-8 items-center gap-1 rounded-full border px-2 py-1 transition-all",
                   showCanvas
                     ? "bg-[#F97316]/15 border-[#F97316] text-[#F97316]"
-                    : "bg-transparent border-transparent text-[#9CA3AF] hover:text-[#D1D5DB]"
+                    : "border-transparent bg-transparent text-(--color-muted-foreground) hover:text-(--color-foreground)"
                 )}
               >
-                <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                <div className="w-5 h-5 flex items-center justify-center shrink-0">
                   <motion.div
                     animate={{ rotate: showCanvas ? 360 : 0, scale: showCanvas ? 1.1 : 1 }}
                     whileHover={{ rotate: showCanvas ? 360 : 15, scale: 1.1, transition: { type: "spring", stiffness: 300, damping: 10 } }}
@@ -769,7 +768,7 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
                       animate={{ width: "auto", opacity: 1 }}
                       exit={{ width: 0, opacity: 0 }}
                       transition={{ duration: 0.2 }}
-                      className="text-xs overflow-hidden whitespace-nowrap text-[#F97316] flex-shrink-0"
+                      className="text-xs overflow-hidden whitespace-nowrap text-[#F97316] shrink-0"
                     >
                       Canvas
                     </motion.span>

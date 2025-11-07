@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 interface UseImageUploadProps {
-  onUpload?: (url: string) => void;
+  onUpload?: (file: File, previewUrl: string | null) => void;
 }
 
 export function useImageUpload({ onUpload }: UseImageUploadProps = {}) {
@@ -9,6 +9,7 @@ export function useImageUpload({ onUpload }: UseImageUploadProps = {}) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const handleThumbnailClick = useCallback(() => {
     fileInputRef.current?.click();
@@ -17,13 +18,29 @@ export function useImageUpload({ onUpload }: UseImageUploadProps = {}) {
   const handleFileChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
-      if (file) {
-        setFileName(file.name);
-        const url = URL.createObjectURL(file);
+      if (!file) {
+        return;
+      }
+
+      if (previewRef.current) {
+        URL.revokeObjectURL(previewRef.current);
+        previewRef.current = null;
+      }
+
+      setFileName(file.name);
+      setSelectedFile(file);
+
+      let url: string | null = null;
+
+      if (file.type.startsWith("image/")) {
+        url = URL.createObjectURL(file);
         setPreviewUrl(url);
         previewRef.current = url;
-        onUpload?.(url);
+      } else {
+        setPreviewUrl(null);
       }
+
+      onUpload?.(file, url);
     },
     [onUpload],
   );
@@ -35,6 +52,7 @@ export function useImageUpload({ onUpload }: UseImageUploadProps = {}) {
     setPreviewUrl(null);
     setFileName(null);
     previewRef.current = null;
+    setSelectedFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -51,6 +69,7 @@ export function useImageUpload({ onUpload }: UseImageUploadProps = {}) {
   return {
     previewUrl,
     fileName,
+    selectedFile,
     fileInputRef,
     handleThumbnailClick,
     handleFileChange,

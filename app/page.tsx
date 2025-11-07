@@ -1,5 +1,5 @@
 import Link from "next/link";
-
+import { TextScramble } from "@/components/ui/text-scramble"
 import { ImageUploadDemo } from "@/components/image-upload-demo";
 import { LiquidButton } from "@/components/liquid-glass-button";
 import { FlickeringGrid } from "@/components/ui/flickering-grid";
@@ -18,9 +18,11 @@ export default function Home() {
         />
       </div>
       <div className="mt-10 relative z-10 max-w-2xl space-y-8">
-        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-          Bro, Job Kyu Nahi Lag Rahi?! 💀
-        </h1>
+        <div className="flex justify-center">
+          <TextScramble className="text-4xl font-bold uppercase tracking-tight sm:text-5xl">
+            Bro, Job Kyu Nahi Lag Rahi?! 💀
+          </TextScramble>
+        </div>
         <p className="text-lg text-muted-foreground">
           Upload your resume, sit back, and let us roast—uhh… review—it 😎. Get real,
           personalized feedback on what’s stopping you from landing that dream tech job. No

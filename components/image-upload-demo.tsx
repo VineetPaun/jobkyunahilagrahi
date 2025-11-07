@@ -1,61 +1,108 @@
 'use client'
-import { useCallback, useState } from "react";
-import Image from "next/image";
-import { ImagePlus, Trash2, Upload, X } from "lucide-react";
+
+import { useCallback, useEffect, useState } from "react";
+import type { ChangeEvent, DragEvent } from "react";
+import { useRouter } from "next/navigation";
+import { FileText, ImagePlus } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { useImageUpload } from "@/hooks/use-image-upload";
 import { cn } from "@/lib/utils";
 
-const iconButtonClasses =
-    "inline-flex h-9 w-9 items-center justify-center rounded-full bg-background/90 text-muted-foreground shadow-sm transition hover:bg-background";
+const SUPPORTED_FORMAT = "PDF";
+
+const isPdfFile = (file: File) =>
+    file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
 
 export function ImageUploadDemo() {
+    const router = useRouter();
     const {
-        previewUrl,
         fileName,
+        selectedFile,
         fileInputRef,
         handleThumbnailClick,
         handleFileChange,
         handleRemove,
-    } = useImageUpload({
-        onUpload: (url) => console.log("Uploaded image URL:", url),
-    });
+    } = useImageUpload();
 
     const [isDragging, setIsDragging] = useState(false);
+    const [uploadError, setUploadError] = useState<string | null>(null);
 
-    const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    useEffect(() => {
+        if (!selectedFile) {
+            return;
+        }
+
+        if (isPdfFile(selectedFile)) {
+            router.push("/review");
+            return;
+        }
+
+        setUploadError(`Please upload a ${SUPPORTED_FORMAT} file.`);
+        handleRemove();
+    }, [selectedFile, router, handleRemove]);
+
+    const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
         event.preventDefault();
         event.stopPropagation();
     };
 
-    const handleDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
+    const handleDragEnter = (event: DragEvent<HTMLDivElement>) => {
         event.preventDefault();
         event.stopPropagation();
         setIsDragging(true);
     };
 
-    const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    const handleDragLeave = (event: DragEvent<HTMLDivElement>) => {
         event.preventDefault();
         event.stopPropagation();
         setIsDragging(false);
     };
 
     const handleDrop = useCallback(
-        (event: React.DragEvent<HTMLDivElement>) => {
+        (event: DragEvent<HTMLDivElement>) => {
             event.preventDefault();
             event.stopPropagation();
             setIsDragging(false);
 
             const file = event.dataTransfer.files?.[0];
-            if (file && file.type.startsWith("image/")) {
-                const fakeEvent = {
-                    target: {
-                        files: [file],
-                    },
-                } as unknown as React.ChangeEvent<HTMLInputElement>;
-                handleFileChange(fakeEvent);
+            if (!file) {
+                return;
             }
+
+            if (!isPdfFile(file)) {
+                setUploadError(`Please upload a ${SUPPORTED_FORMAT} file.`);
+                return;
+            }
+
+            setUploadError(null);
+
+            const fakeEvent = {
+                target: {
+                    files: [file],
+                },
+            } as unknown as ChangeEvent<HTMLInputElement>;
+
+            handleFileChange(fakeEvent);
+        },
+        [handleFileChange],
+    );
+
+    const handleInputChange = useCallback(
+        (event: ChangeEvent<HTMLInputElement>) => {
+            const file = event.target.files?.[0];
+            if (!file) {
+                return;
+            }
+
+            if (!isPdfFile(file)) {
+                setUploadError(`Please upload a ${SUPPORTED_FORMAT} file.`);
+                event.target.value = "";
+                return;
+            }
+
+            setUploadError(null);
+            handleFileChange(event);
         },
         [handleFileChange],
     );
@@ -65,81 +112,56 @@ export function ImageUploadDemo() {
             <div className="space-y-2">
                 <h3 className="text-lg font-medium">Upload Your Resume</h3>
                 <p className="text-sm text-muted-foreground">
-                    Supported formats: PDF
+                    Supported formats: {SUPPORTED_FORMAT}
                 </p>
             </div>
 
             <Input
                 type="file"
-                accept="image/*"
+                accept=".pdf,application/pdf"
                 className="hidden"
                 ref={fileInputRef}
-                onChange={handleFileChange}
+                onChange={handleInputChange}
             />
 
-            {!previewUrl ? (
-                <div
-                    onClick={handleThumbnailClick}
-                    onDragOver={handleDragOver}
-                    onDragEnter={handleDragEnter}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    className={cn(
-                        "flex h-64 cursor-pointer flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/50 transition-colors hover:bg-muted",
-                        isDragging && "border-primary/50 bg-primary/5",
-                    )}
-                >
-                    <div className="rounded-full bg-background p-3 shadow-sm">
-                        <ImagePlus className="h-6 w-6 text-muted-foreground" />
-                    </div>
-                    <div className="text-center">
-                        <p className="text-sm font-medium">Click to select</p>
+            <div
+                onClick={handleThumbnailClick}
+                onDragOver={handleDragOver}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={cn(
+                    "flex h-64 cursor-pointer flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/50 transition-colors hover:bg-muted",
+                    isDragging && "border-primary/50 bg-primary/5",
+                )}
+            >
+                {selectedFile ? (
+                    <div className="flex flex-col items-center gap-2">
+                        <FileText className="h-10 w-10 text-primary" />
+                        <p className="max-w-[240px] truncate text-sm font-medium">
+                            {fileName}
+                        </p>
                         <p className="text-xs text-muted-foreground">
-                            or drag and drop file here
+                            Redirecting to the review page...
                         </p>
                     </div>
-                </div>
-            ) : (
-                <div className="relative">
-                    <div className="group relative h-64 overflow-hidden rounded-lg border">
-                        <Image
-                            src={previewUrl}
-                            alt="Preview"
-                            fill
-                            className="object-cover transition-transform duration-300 group-hover:scale-105"
-                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100" />
-                        <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
-                            <button
-                                type="button"
-                                onClick={handleThumbnailClick}
-                                className={iconButtonClasses}
-                            >
-                                <Upload className="h-4 w-4" />
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleRemove}
-                                className={cn(iconButtonClasses, "text-destructive")}
-                            >
-                                <Trash2 className="h-4 w-4" />
-                            </button>
+                ) : (
+                    <>
+                        <div className="rounded-full bg-background p-3 shadow-sm">
+                            <ImagePlus className="h-6 w-6 text-muted-foreground" />
                         </div>
-                    </div>
-                    {fileName && (
-                        <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-                            <span className="truncate">{fileName}</span>
-                            <button
-                                type="button"
-                                onClick={handleRemove}
-                                className="ml-auto rounded-full p-1 transition hover:bg-muted"
-                            >
-                                <X className="h-4 w-4" />
-                            </button>
+                        <div className="text-center">
+                            <p className="text-sm font-medium">Click to select</p>
+                            <p className="text-xs text-muted-foreground">
+                                or drag and drop file here
+                            </p>
                         </div>
-                    )}
-                </div>
+                    </>
+                )}
+            </div>
+
+            {uploadError && (
+                <p className="text-sm text-destructive">{uploadError}</p>
             )}
         </div>
     );
