@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
-import { Button } from "@/components/ui/button";
+import { LiquidButton } from "@/components/liquid-glass-button";
 import { OAuthButtons } from "@/components/oauth-buttons";
 import { useRouter } from "next/navigation";
 
@@ -109,13 +109,13 @@ export default function SignInPage() {
                             />
                         </div>
 
-                        <Button
+                        <LiquidButton
                             type="submit"
                             disabled={loading}
-                            className="w-full"
+                            className="w-full justify-center"
                         >
                             {loading ? "Signing in..." : "Sign in"}
-                        </Button>
+                        </LiquidButton>
                     </form>
                 </div>
             </div>

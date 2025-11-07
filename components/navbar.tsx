@@ -17,8 +17,9 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 const menuItems = [
+    { name: 'Home', href: '/' },
     { name: 'Dashboard', href: '/dashboard' },
-    // { name: 'Profile', href: '/profile' }
+    { name: 'review', href: '/review' }
 ]
 
 export const Header = () => {
@@ -148,18 +149,17 @@ export const Header = () => {
                                     <>
                                         <LiquidButton
                                             asChild
-                                            variant="default"
-                                            size="sm">
-                                            <Link href="/sign-in">
-                                                <span>Sign In</span>
-                                            </Link>
+                                            size="lg"
+                                            className="h-11 px-6 font-semibold"
+                                        >
+                                            <Link href="/sign-in">Sign In</Link>
                                         </LiquidButton>
                                         <LiquidButton
                                             asChild
-                                            size="sm">
-                                            <Link href="/sign-up">
-                                                <span>Sign Up</span>
-                                            </Link>
+                                            size="lg"
+                                            className="h-11 px-6 font-semibold"
+                                        >
+                                            <Link href="/sign-up">Sign Up</Link>
                                         </LiquidButton>
                                     </>
                                 )
@@ -224,20 +224,17 @@ export const Header = () => {
                                         <>
                                             <LiquidButton
                                                 asChild
-                                                variant="default"
-                                                size="sm"
-                                                className="w-full">
-                                                <Link href="/sign-in">
-                                                    <span>Sign In</span>
-                                                </Link>
+                                                size="lg"
+                                                className="w-full h-11 justify-center font-semibold"
+                                            >
+                                                <Link href="/sign-in">Sign In</Link>
                                             </LiquidButton>
                                             <LiquidButton
                                                 asChild
-                                                size="sm"
-                                                className="w-full">
-                                                <Link href="/sign-up">
-                                                    <span>Sign Up</span>
-                                                </Link>
+                                                size="lg"
+                                                className="w-full h-11 justify-center font-semibold"
+                                            >
+                                                <Link href="/sign-up">Sign Up</Link>
                                             </LiquidButton>
                                         </>
                                     )
