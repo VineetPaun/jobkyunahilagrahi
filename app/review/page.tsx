@@ -33,8 +33,111 @@ const ASSISTANT_AVATAR = {
 const ReviewPage = () => {
     const [messages, setMessages] = React.useState<ChatMessage[]>([]);
     const [resumeContext, setResumeContext] = React.useState<string>("");
-    const [isLoading, setIsLoading] = React.useState(false);
+    const [isStreaming, setIsStreaming] = React.useState(false);
     const chatContainerRef = React.useRef<HTMLDivElement | null>(null);
+
+    // Load initial analysis from sessionStorage when component mounts
+    React.useEffect(() => {
+        const storedResumeContent = sessionStorage.getItem('resumeContent');
+        const pendingAnalysis = sessionStorage.getItem('pendingAnalysis');
+
+        if (storedResumeContent) {
+            setResumeContext(storedResumeContent);
+        }
+
+        // If there's a pending analysis (user just uploaded from home page)
+        if (pendingAnalysis === 'true') {
+            sessionStorage.removeItem('pendingAnalysis');
+
+            // Show user message
+            setMessages([{
+                id: `initial-upload-${Date.now()}`,
+                role: 'user',
+                content: '📎 Uploaded resume from home page',
+                avatar: USER_AVATAR,
+            }]);
+
+            const assistantMessageId = `initial-analysis-${Date.now()}`;
+
+            // Add empty assistant message for streaming
+            setMessages(prev => [
+                ...prev,
+                {
+                    id: assistantMessageId,
+                    role: 'assistant',
+                    content: '',
+                    avatar: ASSISTANT_AVATAR,
+                },
+            ]);
+
+            // Set streaming state
+            setIsStreaming(true);
+
+            // Make the AI API call with streaming
+            fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: `I've uploaded my resume. Please analyze it and provide detailed feedback on:\n1. Overall structure and formatting\n2. Content quality and impact\n3. ATS optimization\n4. Key strengths and areas for improvement\n5. Actionable suggestions for enhancement\n\nHere's my resume content:\n\n${storedResumeContent}`,
+                    resumeContext: storedResumeContent,
+                }),
+            })
+                .then(async response => {
+                    const reader = response.body?.getReader();
+                    const decoder = new TextDecoder();
+                    let accumulatedContent = '';
+
+                    if (!reader) {
+                        throw new Error('No reader available');
+                    }
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+
+                        const chunk = decoder.decode(value);
+                        const lines = chunk.split('\n');
+
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                const data = line.slice(6);
+                                if (data === '[DONE]') {
+                                    continue;
+                                }
+
+                                try {
+                                    const parsed = JSON.parse(data);
+                                    if (parsed.content) {
+                                        accumulatedContent += parsed.content;
+                                        setMessages(prev =>
+                                            prev.map(msg =>
+                                                msg.id === assistantMessageId
+                                                    ? { ...msg, content: accumulatedContent }
+                                                    : msg
+                                            )
+                                        );
+                                    }
+                                } catch (e) {
+                                    // Skip invalid JSON
+                                }
+                            }
+                        }
+                    }
+                    setIsStreaming(false);
+                })
+                .catch(error => {
+                    console.error('Error analyzing resume:', error);
+                    setMessages(prev =>
+                        prev.map(msg =>
+                            msg.id === assistantMessageId
+                                ? { ...msg, content: '❌ Failed to analyze resume. Please try asking me a question!' }
+                                : msg
+                        )
+                    );
+                    setIsStreaming(false);
+                });
+        }
+    }, []);
 
     React.useEffect(() => {
         const container = chatContainerRef.current;
@@ -62,8 +165,6 @@ const ReviewPage = () => {
             },
         ]);
 
-        setIsLoading(true);
-
         // Process PDF files if uploaded
         if (files?.length) {
             for (const file of files) {
@@ -78,13 +179,30 @@ const ReviewPage = () => {
                             // Store resume context
                             setResumeContext(result.data.content);
 
-                            // Send to AI with resume context
+                            const assistantMessageId = `${messageId}-ai`;
+
+                            // Add empty assistant message for streaming
+                            setMessages((prev) => [
+                                ...prev,
+                                {
+                                    id: assistantMessageId,
+                                    role: "assistant",
+                                    content: '',
+                                    avatar: ASSISTANT_AVATAR,
+                                },
+                            ]);
+
+                            // Set streaming state
+                            setIsStreaming(true);
+
+                            // Send to AI with resume context (streaming)
                             const aiResponse = await fetch('/api/chat', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
                                     message: `I've uploaded my resume. Here's the content:\n\n${result.data.content}\n\n${trimmedMessage || "Please analyze my resume."}`,
                                     model: selectedModel,
+                                    resumeContext: result.data.content,
                                     conversationHistory: messages.map(m => ({
                                         role: m.role,
                                         content: m.content
@@ -92,29 +210,45 @@ const ReviewPage = () => {
                                 }),
                             });
 
-                            const aiData = await aiResponse.json();
+                            const reader = aiResponse.body?.getReader();
+                            const decoder = new TextDecoder();
+                            let accumulatedContent = '';
 
-                            if (aiResponse.ok) {
-                                setMessages((prev) => [
-                                    ...prev,
-                                    {
-                                        id: `${messageId}-ai`,
-                                        role: "assistant",
-                                        content: aiData.message || "Resume uploaded successfully!",
-                                        avatar: ASSISTANT_AVATAR,
-                                    },
-                                ]);
-                            } else {
-                                setMessages((prev) => [
-                                    ...prev,
-                                    {
-                                        id: `${messageId}-error`,
-                                        role: "assistant",
-                                        content: `❌ ${aiData.error || "Failed to analyze resume"}`,
-                                        avatar: ASSISTANT_AVATAR,
-                                    },
-                                ]);
+                            if (!reader) {
+                                throw new Error('No reader available');
                             }
+
+                            while (true) {
+                                const { done, value } = await reader.read();
+                                if (done) break;
+
+                                const chunk = decoder.decode(value);
+                                const lines = chunk.split('\n');
+
+                                for (const line of lines) {
+                                    if (line.startsWith('data: ')) {
+                                        const data = line.slice(6);
+                                        if (data === '[DONE]') continue;
+
+                                        try {
+                                            const parsed = JSON.parse(data);
+                                            if (parsed.content) {
+                                                accumulatedContent += parsed.content;
+                                                setMessages((prev) =>
+                                                    prev.map(msg =>
+                                                        msg.id === assistantMessageId
+                                                            ? { ...msg, content: accumulatedContent }
+                                                            : msg
+                                                    )
+                                                );
+                                            }
+                                        } catch (e) {
+                                            // Skip invalid JSON
+                                        }
+                                    }
+                                }
+                            }
+                            setIsStreaming(false);
                         } else {
                             setMessages((prev) => [
                                 ...prev,
@@ -137,6 +271,7 @@ const ReviewPage = () => {
                                 avatar: ASSISTANT_AVATAR,
                             },
                         ]);
+                        setIsStreaming(false);
                     }
                 }
             }
@@ -144,6 +279,22 @@ const ReviewPage = () => {
 
         // Handle text-only messages
         if (trimmedMessage && !files?.length) {
+            const assistantMessageId = `${messageId}-ai`;
+
+            // Add empty assistant message for streaming
+            setMessages((prev) => [
+                ...prev,
+                {
+                    id: assistantMessageId,
+                    role: "assistant",
+                    content: '',
+                    avatar: ASSISTANT_AVATAR,
+                },
+            ]);
+
+            // Set streaming state
+            setIsStreaming(true);
+
             try {
                 const aiResponse = await fetch('/api/chat', {
                     method: 'POST',
@@ -159,44 +310,57 @@ const ReviewPage = () => {
                     }),
                 });
 
-                const aiData = await aiResponse.json();
+                const reader = aiResponse.body?.getReader();
+                const decoder = new TextDecoder();
+                let accumulatedContent = '';
 
-                if (aiResponse.ok) {
-                    setMessages((prev) => [
-                        ...prev,
-                        {
-                            id: `${messageId}-ai`,
-                            role: "assistant",
-                            content: aiData.message || "I'm here to help!",
-                            avatar: ASSISTANT_AVATAR,
-                        },
-                    ]);
-                } else {
-                    setMessages((prev) => [
-                        ...prev,
-                        {
-                            id: `${messageId}-error`,
-                            role: "assistant",
-                            content: `❌ ${aiData.error || "Failed to get response"}`,
-                            avatar: ASSISTANT_AVATAR,
-                        },
-                    ]);
+                if (!reader) {
+                    throw new Error('No reader available');
                 }
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6);
+                            if (data === '[DONE]') continue;
+
+                            try {
+                                const parsed = JSON.parse(data);
+                                if (parsed.content) {
+                                    accumulatedContent += parsed.content;
+                                    setMessages((prev) =>
+                                        prev.map(msg =>
+                                            msg.id === assistantMessageId
+                                                ? { ...msg, content: accumulatedContent }
+                                                : msg
+                                        )
+                                    );
+                                }
+                            } catch (e) {
+                                // Skip invalid JSON
+                            }
+                        }
+                    }
+                }
+                setIsStreaming(false);
             } catch (error) {
                 console.error("Error getting AI response:", error);
-                setMessages((prev) => [
-                    ...prev,
-                    {
-                        id: `${messageId}-error`,
-                        role: "assistant",
-                        content: `❌ ${error instanceof Error ? error.message : "Failed to get response"}`,
-                        avatar: ASSISTANT_AVATAR,
-                    },
-                ]);
+                setMessages((prev) =>
+                    prev.map(msg =>
+                        msg.id === assistantMessageId
+                            ? { ...msg, content: `❌ ${error instanceof Error ? error.message : "Failed to get response"}` }
+                            : msg
+                    )
+                );
+                setIsStreaming(false);
             }
         }
-
-        setIsLoading(false);
     };
 
     return (
@@ -307,27 +471,9 @@ const ReviewPage = () => {
                             </ChatBubble>
                         );
                     })}
-                    {isLoading && (
-                        <ChatBubble variant="received">
-                            <ChatBubbleAvatar
-                                fallback="AI"
-                                src={ASSISTANT_AVATAR.src}
-                            />
-                            <ChatBubbleMessage variant="received">
-                                <div className="flex items-center gap-2">
-                                    <div className="flex gap-1">
-                                        <div className="h-2 w-2 animate-bounce rounded-full bg-current [animation-delay:-0.3s]"></div>
-                                        <div className="h-2 w-2 animate-bounce rounded-full bg-current [animation-delay:-0.15s]"></div>
-                                        <div className="h-2 w-2 animate-bounce rounded-full bg-current"></div>
-                                    </div>
-                                    <span className="text-sm">Thinking...</span>
-                                </div>
-                            </ChatBubbleMessage>
-                        </ChatBubble>
-                    )}
                 </div>
                 <div className="sticky bottom-3 left-0 right-0 w-full bg-background pt-4">
-                    <PromptInputBox onSend={handleSendMessage} isLoading={isLoading} />
+                    <PromptInputBox onSend={handleSendMessage} isLoading={isStreaming} />
                 </div>
             </div>
         </div>

@@ -7,7 +7,8 @@ import { createChatCompletion, MODELS } from "./openrouter";
 /**
  * System prompt for resume and job search assistance
  */
-export const RESUME_ASSISTANT_SYSTEM_PROMPT = `You are an expert career coach and resume advisor with deep knowledge in:
+export const RESUME_ASSISTANT_SYSTEM_PROMPT = `
+You are an expert career coach and resume advisor with deep knowledge in:
 - Resume writing and optimization
 - ATS (Applicant Tracking System) optimization
 - Job search strategies

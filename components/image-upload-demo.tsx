@@ -48,7 +48,14 @@ export function ImageUploadDemo() {
                     if (result.success) {
                         console.log("✅ PDF processed successfully!");
                         console.log("PDF Data:", result.data);
-                        // Navigate to review page after successful processing
+
+                        // Store the resume content and set pending flag in sessionStorage
+                        sessionStorage.setItem('resumeContent', result.data?.content || '');
+                        sessionStorage.setItem('pendingAnalysis', 'true');
+
+                        console.log("✅ Redirecting to review page for AI analysis...");
+
+                        // Navigate to review page immediately - AI call will happen there
                         router.push("/review");
                     } else {
                         console.error("❌ PDF processing failed:", result.error);

@@ -51,21 +51,44 @@ export async function POST(req: NextRequest) {
             content: message,
         });
 
-        // Call AI
-        const completion = await openrouter.chat.completions.create({
+        // Call AI with streaming enabled
+        const stream = await openrouter.chat.completions.create({
             model: model || MODELS.DEEPSEEK_V3_1,
             messages,
             temperature: 0.7,
             max_tokens: 2000,
-            stream: false,
+            stream: true,
         });
 
-        const responseMessage = completion.choices[0]?.message?.content;
+        // Create a ReadableStream for Server-Sent Events
+        const encoder = new TextEncoder();
+        const readable = new ReadableStream({
+            async start(controller) {
+                try {
+                    for await (const chunk of stream) {
+                        const content = chunk.choices[0]?.delta?.content || "";
+                        if (content) {
+                            controller.enqueue(
+                                encoder.encode(
+                                    `data: ${JSON.stringify({ content })}\n\n`
+                                )
+                            );
+                        }
+                    }
+                    controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+                    controller.close();
+                } catch (error) {
+                    controller.error(error);
+                }
+            },
+        });
 
-        return NextResponse.json({
-            message: responseMessage,
-            model: completion.model,
-            usage: completion.usage,
+        return new Response(readable, {
+            headers: {
+                "Content-Type": "text/event-stream",
+                "Cache-Control": "no-cache",
+                Connection: "keep-alive",
+            },
         });
     } catch (error) {
         console.error("OpenRouter API error:", error);

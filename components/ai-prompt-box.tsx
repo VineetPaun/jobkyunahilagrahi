@@ -577,6 +577,7 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
   }, [handlePaste]);
 
   const handleSubmit = () => {
+    if (isLoading) return; // Prevent submission while streaming
     if (input.trim() || files.length > 0) {
       let messagePrefix = "";
       if (showSearch) messagePrefix = "[Search: ";
@@ -612,7 +613,7 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
           isRecording && "border-red-500/70",
           className
         )}
-        disabled={isLoading || isRecording}
+        disabled={isRecording}
         ref={ref || promptBoxRef}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -713,7 +714,7 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value)}
                 className="h-8 px-2 py-1 text-xs rounded-full border border-(--color-border) bg-(--color-card) text-(--color-foreground) hover:bg-foreground/10 transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-(--color-ring)"
-                disabled={isRecording || isLoading}
+                disabled={isRecording}
               >
                 <option value="gpt-oss-20b">GPT OSS 20B</option>
                 <option value="deepseek/deepseek-chat-v3.1">DeepSeek v3.1</option>
@@ -869,16 +870,18 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
                 "h-8 w-8 rounded-full transition-all duration-200",
                 isRecording
                   ? "bg-transparent hover:bg-gray-600/30 text-red-500 hover:text-red-400"
-                  : hasContent
+                  : hasContent && !isLoading
                     ? "bg-white hover:bg-white/80 text-[#1F2023]"
-                    : "bg-transparent hover:bg-gray-600/30 text-[#9CA3AF] hover:text-[#D1D5DB]"
+                    : isLoading
+                      ? "bg-gray-400 text-white cursor-not-allowed opacity-60"
+                      : "bg-transparent hover:bg-gray-600/30 text-[#9CA3AF] hover:text-[#D1D5DB]"
               )}
               onClick={() => {
                 if (isRecording) setIsRecording(false);
-                else if (hasContent) handleSubmit();
-                else setIsRecording(true);
+                else if (hasContent && !isLoading) handleSubmit();
+                else if (!isLoading) setIsRecording(true);
               }}
-              disabled={isLoading && !hasContent}
+              disabled={isLoading}
             >
               {isLoading ? (
                 <Square className="h-4 w-4 fill-[#1F2023] animate-pulse" />
