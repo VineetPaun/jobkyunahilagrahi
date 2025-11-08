@@ -1,6 +1,7 @@
 "use client";
-
 import React from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { PromptInputBox } from "@/components/ai-prompt-box";
 import {
     ChatBubble,
@@ -31,6 +32,8 @@ const ASSISTANT_AVATAR = {
 
 const ReviewPage = () => {
     const [messages, setMessages] = React.useState<ChatMessage[]>([]);
+    const [resumeContext, setResumeContext] = React.useState<string>("");
+    const [isLoading, setIsLoading] = React.useState(false);
     const chatContainerRef = React.useRef<HTMLDivElement | null>(null);
 
     React.useEffect(() => {
@@ -40,7 +43,7 @@ const ReviewPage = () => {
         }
     }, [messages]);
 
-    const handleSendMessage = async (message: string, files?: File[]) => {
+    const handleSendMessage = async (message: string, files?: File[], selectedModel?: string) => {
         const trimmedMessage = message.trim();
         if (!trimmedMessage && (!files || files.length === 0)) {
             return;
@@ -59,138 +62,141 @@ const ReviewPage = () => {
             },
         ]);
 
-        console.log("Message:", trimmedMessage);
+        setIsLoading(true);
 
         // Process PDF files if uploaded
         if (files?.length) {
-            console.log("Files:", files);
-
             for (const file of files) {
                 if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
-                    console.log(`Processing PDF: ${file.name}`);
-
                     const formData = new FormData();
                     formData.append("file", file);
 
                     try {
                         const result = await processPdfAction(formData);
 
-                        if (result.success) {
-                            console.log("✅ PDF processed successfully in chat!");
-                            console.log("PDF Data:", result.data);
+                        if (result.success && result.data?.content) {
+                            // Store resume context
+                            setResumeContext(result.data.content);
 
-                            // Add assistant response with PDF info
-                            setTimeout(() => {
-                                setMessages((prev) => {
-                                    const assistantId = `${messageId}-pdf-info`;
-                                    if (prev.some((entry) => entry.id === assistantId)) {
-                                        return prev;
-                                    }
+                            // Send to AI with resume context
+                            const aiResponse = await fetch('/api/chat', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    message: `I've uploaded my resume. Here's the content:\n\n${result.data.content}\n\n${trimmedMessage || "Please analyze my resume."}`,
+                                    model: selectedModel,
+                                    conversationHistory: messages.map(m => ({
+                                        role: m.role,
+                                        content: m.content
+                                    })),
+                                }),
+                            });
 
-                                    const index = prev.findIndex((entry) => entry.id === messageId);
-                                    if (index === -1) {
-                                        return prev;
-                                    }
+                            const aiData = await aiResponse.json();
 
-                                    const nextMessages = [...prev];
-                                    nextMessages.splice(index + 1, 0, {
-                                        id: assistantId,
+                            if (aiResponse.ok) {
+                                setMessages((prev) => [
+                                    ...prev,
+                                    {
+                                        id: `${messageId}-ai`,
                                         role: "assistant",
-                                        content: `I've received your PDF "${result.data?.fileName}" (${result.data?.totalPages} pages, ${Math.round((result.data?.fileSize || 0) / 1024)}KB).`,
+                                        content: aiData.message || "Resume uploaded successfully!",
                                         avatar: ASSISTANT_AVATAR,
-                                    });
-                                    return nextMessages;
-                                });
-                            }, 600);
+                                    },
+                                ]);
+                            } else {
+                                setMessages((prev) => [
+                                    ...prev,
+                                    {
+                                        id: `${messageId}-error`,
+                                        role: "assistant",
+                                        content: `❌ ${aiData.error || "Failed to analyze resume"}`,
+                                        avatar: ASSISTANT_AVATAR,
+                                    },
+                                ]);
+                            }
                         } else {
-                            console.error("❌ PDF processing failed:", result.error);
-
-                            // Add error message to chat
-                            setTimeout(() => {
-                                setMessages((prev) => {
-                                    const errorId = `${messageId}-error`;
-                                    if (prev.some((entry) => entry.id === errorId)) {
-                                        return prev;
-                                    }
-
-                                    const index = prev.findIndex((entry) => entry.id === messageId);
-                                    if (index === -1) {
-                                        return prev;
-                                    }
-
-                                    const nextMessages = [...prev];
-                                    nextMessages.splice(index + 1, 0, {
-                                        id: errorId,
-                                        role: "assistant",
-                                        content: `❌ ${result.error || "Failed to process PDF"}`,
-                                        avatar: ASSISTANT_AVATAR,
-                                    });
-                                    return nextMessages;
-                                });
-                            }, 600);
+                            setMessages((prev) => [
+                                ...prev,
+                                {
+                                    id: `${messageId}-error`,
+                                    role: "assistant",
+                                    content: `❌ ${result.error || "Failed to process PDF"}`,
+                                    avatar: ASSISTANT_AVATAR,
+                                },
+                            ]);
                         }
                     } catch (error) {
-                        console.error("❌ Error processing PDF:", error);
-
-                        // Add error message to chat with helpful details
-                        setTimeout(() => {
-                            setMessages((prev) => {
-                                const errorId = `${messageId}-catch-error`;
-                                if (prev.some((entry) => entry.id === errorId)) {
-                                    return prev;
-                                }
-
-                                const index = prev.findIndex((entry) => entry.id === messageId);
-                                if (index === -1) {
-                                    return prev;
-                                }
-
-                                const errorMessage = error instanceof Error
-                                    ? error.message
-                                    : "Unable to process PDF. Please ensure it's a valid PDF file with max 2 pages.";
-
-                                const nextMessages = [...prev];
-                                nextMessages.splice(index + 1, 0, {
-                                    id: errorId,
-                                    role: "assistant",
-                                    content: `❌ ${errorMessage}`,
-                                    avatar: ASSISTANT_AVATAR,
-                                });
-                                return nextMessages;
-                            });
-                        }, 600);
+                        console.error("Error processing PDF:", error);
+                        setMessages((prev) => [
+                            ...prev,
+                            {
+                                id: `${messageId}-error`,
+                                role: "assistant",
+                                content: `❌ ${error instanceof Error ? error.message : "Failed to process PDF"}`,
+                                avatar: ASSISTANT_AVATAR,
+                            },
+                        ]);
                     }
-                } else {
-                    console.log(`Skipping non-PDF file: ${file.name}`);
                 }
             }
         }
 
-        // Add a generic assistant response if there's a text message
-        if (trimmedMessage) {
-            setTimeout(() => {
-                setMessages((prev) => {
-                    const assistantId = `${messageId}-ai`;
-                    if (prev.some((entry) => entry.id === assistantId)) {
-                        return prev;
-                    }
-
-                    const index = prev.findIndex((entry) => entry.id === messageId);
-                    if (index === -1) {
-                        return prev;
-                    }
-
-                    const nextMessages = [...prev];
-                    nextMessages.splice(index + 1, 0, {
-                        id: assistantId,
-                        role: "assistant",
-                        content: `Thanks for sharing: "${trimmedMessage}"`,
-                        avatar: ASSISTANT_AVATAR,
-                    });
-                    return nextMessages;
+        // Handle text-only messages
+        if (trimmedMessage && !files?.length) {
+            try {
+                const aiResponse = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: trimmedMessage,
+                        model: selectedModel,
+                        resumeContext: resumeContext, // Include resume context if available
+                        conversationHistory: messages.map(m => ({
+                            role: m.role,
+                            content: m.content
+                        })),
+                    }),
                 });
-            }, 600);
+
+                const aiData = await aiResponse.json();
+
+                if (aiResponse.ok) {
+                    setMessages((prev) => [
+                        ...prev,
+                        {
+                            id: `${messageId}-ai`,
+                            role: "assistant",
+                            content: aiData.message || "I'm here to help!",
+                            avatar: ASSISTANT_AVATAR,
+                        },
+                    ]);
+                } else {
+                    setMessages((prev) => [
+                        ...prev,
+                        {
+                            id: `${messageId}-error`,
+                            role: "assistant",
+                            content: `❌ ${aiData.error || "Failed to get response"}`,
+                            avatar: ASSISTANT_AVATAR,
+                        },
+                    ]);
+                }
+            } catch (error) {
+                console.error("Error getting AI response:", error);
+                setMessages((prev) => [
+                    ...prev,
+                    {
+                        id: `${messageId}-error`,
+                        role: "assistant",
+                        content: `❌ ${error instanceof Error ? error.message : "Failed to get response"}`,
+                        avatar: ASSISTANT_AVATAR,
+                    },
+                ]);
+            }
         }
+
+        setIsLoading(false);
     };
 
     return (
@@ -200,6 +206,16 @@ const ReviewPage = () => {
                     ref={chatContainerRef}
                     className="flex-1 space-y-4 overflow-y-auto pr-2"
                 >
+                    {messages.length === 0 && (
+                        <div className="flex h-full items-center justify-center text-center">
+                            <div className="space-y-3">
+                                <h2 className="text-2xl font-semibold">Welcome to Resume Review</h2>
+                                <p className="text-muted-foreground">
+                                    Upload your resume to get started, or ask me anything about your job search!
+                                </p>
+                            </div>
+                        </div>
+                    )}
                     {messages.map((message) => {
                         const isUser = message.role === "user";
                         return (
@@ -214,14 +230,104 @@ const ReviewPage = () => {
                                 <ChatBubbleMessage
                                     variant={isUser ? "sent" : "received"}
                                 >
-                                    {message.content}
+                                    {isUser ? (
+                                        <div className="whitespace-pre-wrap">
+                                            {message.content}
+                                        </div>
+                                    ) : (
+                                        <div className="prose prose-sm dark:prose-invert max-w-none">
+                                            <ReactMarkdown
+                                                remarkPlugins={[remarkGfm]}
+                                                components={{
+                                                    p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                                                    ul: ({ children }) => <ul className="list-disc ml-4 mb-2">{children}</ul>,
+                                                    ol: ({ children }) => <ol className="list-decimal ml-4 mb-2">{children}</ol>,
+                                                    li: ({ children }) => <li className="mb-1">{children}</li>,
+                                                    h1: ({ children }) => <h1 className="text-xl font-bold mb-2 mt-4 first:mt-0">{children}</h1>,
+                                                    h2: ({ children }) => <h2 className="text-lg font-bold mb-2 mt-3 first:mt-0">{children}</h2>,
+                                                    h3: ({ children }) => <h3 className="text-base font-bold mb-2 mt-2 first:mt-0">{children}</h3>,
+                                                    h4: ({ children }) => <h4 className="text-sm font-bold mb-1 mt-2">{children}</h4>,
+                                                    code: ({ className, children, ...props }) => {
+                                                        const isInline = !className;
+                                                        return isInline ? (
+                                                            <code className="bg-muted px-1 py-0.5 rounded text-sm font-mono" {...props}>
+                                                                {children}
+                                                            </code>
+                                                        ) : (
+                                                            <code className={`block bg-muted p-2 rounded text-sm font-mono overflow-x-auto ${className}`} {...props}>
+                                                                {children}
+                                                            </code>
+                                                        );
+                                                    },
+                                                    pre: ({ children }) => <pre className="bg-muted p-3 rounded-md overflow-x-auto mb-2">{children}</pre>,
+                                                    strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+                                                    em: ({ children }) => <em className="italic">{children}</em>,
+                                                    blockquote: ({ children }) => <blockquote className="border-l-4 border-primary pl-4 italic my-2">{children}</blockquote>,
+                                                    hr: () => <hr className="my-4 border-border" />,
+                                                    // Table components
+                                                    table: ({ children }) => (
+                                                        <div className="overflow-x-auto my-4">
+                                                            <table className="min-w-full divide-y divide-border border border-border rounded-lg">
+                                                                {children}
+                                                            </table>
+                                                        </div>
+                                                    ),
+                                                    thead: ({ children }) => (
+                                                        <thead className="bg-muted">
+                                                            {children}
+                                                        </thead>
+                                                    ),
+                                                    tbody: ({ children }) => (
+                                                        <tbody className="divide-y divide-border bg-background">
+                                                            {children}
+                                                        </tbody>
+                                                    ),
+                                                    tr: ({ children }) => (
+                                                        <tr className="hover:bg-muted/50 transition-colors">
+                                                            {children}
+                                                        </tr>
+                                                    ),
+                                                    th: ({ children }) => (
+                                                        <th className="px-4 py-3 text-left text-sm font-semibold">
+                                                            {children}
+                                                        </th>
+                                                    ),
+                                                    td: ({ children }) => (
+                                                        <td className="px-4 py-3 text-sm">
+                                                            {children}
+                                                        </td>
+                                                    ),
+                                                }}
+                                            >
+                                                {message.content}
+                                            </ReactMarkdown>
+                                        </div>
+                                    )}
                                 </ChatBubbleMessage>
                             </ChatBubble>
                         );
                     })}
+                    {isLoading && (
+                        <ChatBubble variant="received">
+                            <ChatBubbleAvatar
+                                fallback="AI"
+                                src={ASSISTANT_AVATAR.src}
+                            />
+                            <ChatBubbleMessage variant="received">
+                                <div className="flex items-center gap-2">
+                                    <div className="flex gap-1">
+                                        <div className="h-2 w-2 animate-bounce rounded-full bg-current [animation-delay:-0.3s]"></div>
+                                        <div className="h-2 w-2 animate-bounce rounded-full bg-current [animation-delay:-0.15s]"></div>
+                                        <div className="h-2 w-2 animate-bounce rounded-full bg-current"></div>
+                                    </div>
+                                    <span className="text-sm">Thinking...</span>
+                                </div>
+                            </ChatBubbleMessage>
+                        </ChatBubble>
+                    )}
                 </div>
                 <div className="sticky bottom-3 left-0 right-0 w-full bg-background pt-4">
-                    <PromptInputBox onSend={handleSendMessage} />
+                    <PromptInputBox onSend={handleSendMessage} isLoading={isLoading} />
                 </div>
             </div>
         </div>

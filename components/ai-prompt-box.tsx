@@ -442,13 +442,14 @@ const CustomDivider: React.FC = () => (
 
 // Main PromptInputBox Component
 interface PromptInputBoxProps {
-  onSend?: (message: string, files?: File[]) => void;
+  onSend?: (message: string, files?: File[], selectedModel?: string) => void;
   isLoading?: boolean;
   placeholder?: string;
   className?: string;
+  defaultModel?: string;
 }
 export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref: React.Ref<HTMLDivElement>) => {
-  const { onSend = () => { }, isLoading = false, placeholder = "Type your message here...", className } = props;
+  const { onSend = () => { }, isLoading = false, placeholder = "Type your message here...", className, defaultModel = "deepseek/deepseek-chat-v3.1" } = props;
   const [input, setInput] = React.useState("");
   const [files, setFiles] = React.useState<File[]>([]);
   const [filePreviews, setFilePreviews] = React.useState<{ [key: string]: string }>({});
@@ -457,6 +458,7 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
   const [showSearch, setShowSearch] = React.useState(false);
   const [showThink, setShowThink] = React.useState(false);
   const [showCanvas, setShowCanvas] = React.useState(false);
+  const [selectedModel, setSelectedModel] = React.useState(defaultModel);
   const uploadInputRef = React.useRef<HTMLInputElement>(null);
   const promptBoxRef = React.useRef<HTMLDivElement>(null);
 
@@ -581,7 +583,7 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
       else if (showThink) messagePrefix = "[Think: ";
       else if (showCanvas) messagePrefix = "[Canvas: ";
       const formattedInput = messagePrefix ? `${messagePrefix}${input}]` : input;
-      onSend(formattedInput, files);
+      onSend(formattedInput, files, selectedModel);
       setInput("");
       setFiles([]);
       setFilePreviews({});
@@ -705,6 +707,21 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
               isRecording ? "opacity-0 invisible h-0" : "opacity-100 visible"
             )}
           >
+            {/* Model Selector */}
+            <PromptInputAction tooltip="Select AI Model">
+              <select
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+                className="h-8 px-2 py-1 text-xs rounded-full border border-(--color-border) bg-(--color-card) text-(--color-foreground) hover:bg-foreground/10 transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-(--color-ring)"
+                disabled={isRecording || isLoading}
+              >
+                <option value="gpt-oss-20b">GPT OSS 20B</option>
+                <option value="deepseek/deepseek-chat-v3.1">DeepSeek v3.1</option>
+                <option value="zhipuai/glm-4.5-air">GLM 4.5 Air</option>
+                <option value="moonshot/kimi-k2-0711">Kimi K2</option>
+              </select>
+            </PromptInputAction>
+
             <PromptInputAction tooltip="Upload image or PDF">
               <button
                 onClick={() => uploadInputRef.current?.click()}
