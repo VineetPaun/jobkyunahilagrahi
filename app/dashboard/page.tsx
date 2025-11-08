@@ -35,10 +35,10 @@ export default async function DashboardPage() {
                 {/* Welcome Section */}
                 <div className="mb-8">
                     <h1 className="text-4xl font-bold text-foreground mb-2">
-                        Welcome back, {session.user.name || 'User'}!
+                        Welcome back, {session.user.name || `User`}!
                     </h1>
                     <p className="text-muted-foreground">
-                        Here's your account overview and information
+                        Here&apos;s your account overview and information
                     </p>
                 </div>
 

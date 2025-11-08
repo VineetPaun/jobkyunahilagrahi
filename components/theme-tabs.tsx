@@ -1,7 +1,6 @@
-import { cn } from "@/lib/utils";
 import { Theme } from "@/components/theme"
 
-export const Component = () => { 
+export const Component = () => {
 
   return (
     <div className="flex items-center gap-3">

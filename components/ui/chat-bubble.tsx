@@ -15,7 +15,6 @@ interface ChatBubbleProps {
 
 export function ChatBubble({
   variant = "received",
-  layout = "default",
   className,
   children,
 }: ChatBubbleProps) {
@@ -83,11 +82,11 @@ export function ChatBubbleAvatar({
   )
 }
 
-interface ChatBubbleActionProps {
-  icon?: React.ReactNode
-  onClick?: () => void
-  className?: string
-}
+// interface ChatBubbleActionProps {
+//   icon?: React.ReactNode
+//   onClick?: () => void
+//   className?: string
+// }
 
 // export function ChatBubbleAction({
 //   icon,

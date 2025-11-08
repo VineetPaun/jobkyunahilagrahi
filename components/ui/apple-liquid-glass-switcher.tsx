@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -35,14 +35,9 @@ export function ThemeSwitcher({
 }: ThemeSwitcherProps) {
   const { theme, setTheme } = useTheme();
   const [internalValue, setInternalValue] = useState<Theme>(value ?? defaultValue);
-  const [mounted, setMounted] = useState(false);
 
   const activeValue: Theme = (value ?? theme ?? internalValue) as Theme;
   const isThemeResolved = value !== undefined || typeof theme === "string";
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const handleValueChange = (next: string) => {
     const nextTheme = next as Theme;
@@ -56,7 +51,7 @@ export function ThemeSwitcher({
     setInternalValue(nextTheme);
   };
 
-  if (!mounted || !isThemeResolved) {
+  if (!isThemeResolved) {
     return (
       <fieldset className="liquid-toggle__fieldset" aria-hidden="true">
         <legend className="liquid-toggle__legend">Choose theme</legend>

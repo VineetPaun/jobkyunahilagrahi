@@ -26,7 +26,7 @@ const menuItems = [
 export const Header = () => {
     const [menuState, setMenuState] = React.useState(false)
     const [isScrolled, setIsScrolled] = React.useState(false)
-    const [session, setSession] = React.useState<any>(null)
+    const [session, setSession] = React.useState<{ user: { name?: string; email?: string; image?: string } } | null>(null)
     const [loading, setLoading] = React.useState(true)
     const router = useRouter()
     const pathname = usePathname()

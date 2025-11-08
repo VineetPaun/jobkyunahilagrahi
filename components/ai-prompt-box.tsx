@@ -175,10 +175,18 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
   isRecording,
   onStartRecording,
   onStopRecording,
-  visualizerBars = 32,
+  visualizerBars = 20,
 }) => {
   const [time, setTime] = React.useState(0);
   const timerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  const [barStyles] = React.useState(() =>
+    [...Array(visualizerBars)].map((_, i) => ({
+      height: Math.max(15, Math.random() * 100),
+      animationDelay: i * 0.05,
+      animationDuration: 0.5 + Math.random() * 0.5,
+    }))
+  );
 
   React.useEffect(() => {
     if (isRecording) {
@@ -215,14 +223,14 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
         <span className="font-mono text-sm text-black/70 dark:text-white/80">{formatTime(time)}</span>
       </div>
       <div className="w-full h-10 flex items-center justify-center gap-0.5 px-4">
-        {[...Array(visualizerBars)].map((_, i) => (
+        {barStyles.map((bar, i) => (
           <div
             key={i}
             className="w-0.5 rounded-full animate-pulse bg-black/20 dark:bg-white/50"
             style={{
-              height: `${Math.max(15, Math.random() * 100)}%`,
-              animationDelay: `${i * 0.05}s`,
-              animationDuration: `${0.5 + Math.random() * 0.5}s`,
+              height: `${bar.height}%`,
+              animationDelay: `${bar.animationDelay}s`,
+              animationDuration: `${bar.animationDuration}s`,
             }}
           />
         ))}
@@ -249,6 +257,7 @@ const ImageViewDialog: React.FC<ImageViewDialogProps> = ({ imageUrl, onClose }) 
           transition={{ duration: 0.2, ease: "easeOut" }}
           className="relative bg-[#1F2023] rounded-2xl overflow-hidden shadow-2xl"
         >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={imageUrl}
             alt="Full preview"
@@ -395,7 +404,7 @@ const PromptInputTextarea: React.FC<PromptInputTextareaProps & React.ComponentPr
   );
 };
 
-interface PromptInputActionsProps extends React.HTMLAttributes<HTMLDivElement> { }
+type PromptInputActionsProps = React.HTMLAttributes<HTMLDivElement>;
 const PromptInputActions: React.FC<PromptInputActionsProps> = ({ children, className, ...props }) => (
   <div className={cn("flex items-center gap-2", className)} {...props}>
     {children}
@@ -481,7 +490,7 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
   const isImageFile = (file: File) => file.type.startsWith("image/");
   const isPdfFile = (file: File) => file.type === "application/pdf";
 
-  const processFile = async (file: File) => {
+  const processFile = React.useCallback(async (file: File) => {
     if (!isImageFile(file) && !isPdfFile(file)) {
       console.log("Only image and PDF files are allowed");
       return;
@@ -525,7 +534,7 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
         console.error('Error parsing PDF:', error);
       }
     }
-  };
+  }, []);
 
   const handleDragOver = React.useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -543,7 +552,7 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
     const files = Array.from(e.dataTransfer.files);
     const acceptedFiles = files.filter((file) => isImageFile(file) || isPdfFile(file));
     if (acceptedFiles.length > 0) processFile(acceptedFiles[0]);
-  }, []);
+  }, [processFile]);
 
   const handleRemoveFile = (index: number) => {
     const fileToRemove = files[index];
@@ -566,7 +575,7 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
         }
       }
     }
-  }, []);
+  }, [processFile]);
 
   React.useEffect(() => {
     if (typeof document === "undefined") return;
@@ -628,6 +637,7 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
                     className="w-16 h-16 rounded-xl overflow-hidden cursor-pointer transition-all duration-300"
                     onClick={() => openImageModal(filePreviews[file.name])}
                   >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={filePreviews[file.name]}
                       alt={file.name}

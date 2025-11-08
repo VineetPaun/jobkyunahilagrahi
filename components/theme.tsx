@@ -1,13 +1,13 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useState } from "react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AnimatePresence, motion } from "framer-motion"
 import {
   Check,
   ChevronDown,
   Monitor,
-  Moon, 
+  Moon,
   Sun,
   Sunset,
   Trees,
@@ -37,10 +37,10 @@ export type ThemeToggleVariant =
   | "button"
   | "switch"
   | "dropdown"
-  | "tabs" 
+  | "tabs"
   | "grid"
-  | "radial"  
-  | "cards" 
+  | "radial"
+  | "cards"
 export type ThemeToggleSize = "sm" | "md" | "lg"
 
 interface ThemeToggleProps {
@@ -60,11 +60,6 @@ export function Theme({
 }: ThemeToggleProps) {
   const { theme, setTheme } = useTheme()
   const [isOpen, setIsOpen] = useState(false)
-  const [isMounted, setIsMounted] = useState(false)
-
-  useEffect(() => {
-    setIsMounted(true)
-  }, [])
 
   const sizeClasses = {
     sm: "h-8 px-2 text-xs",
@@ -77,8 +72,6 @@ export function Theme({
     md: 16,
     lg: 20,
   }
-
-  if (!isMounted) return null
 
   if (variant === "button") {
     function isTheme(value: unknown): value is Theme {
@@ -460,7 +453,7 @@ export function Theme({
       </div>
     )
   }
-   
+
 
   return null
 }

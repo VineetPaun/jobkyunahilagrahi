@@ -117,7 +117,7 @@ const ReviewPage = () => {
                                             )
                                         );
                                     }
-                                } catch (e) {
+                                } catch {
                                     // Skip invalid JSON
                                 }
                             }
@@ -242,7 +242,7 @@ const ReviewPage = () => {
                                                     )
                                                 );
                                             }
-                                        } catch (e) {
+                                        } catch {
                                             // Skip invalid JSON
                                         }
                                     }
@@ -342,7 +342,7 @@ const ReviewPage = () => {
                                         )
                                     );
                                 }
-                            } catch (e) {
+                            } catch {
                                 // Skip invalid JSON
                             }
                         }
