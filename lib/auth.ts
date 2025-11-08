@@ -28,6 +28,11 @@ export const auth = betterAuth({
                 },
             }),
     },
-    trustedOrigins: ["http://localhost:3000", "http://localhost:3001"],
+    trustedOrigins: [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "https://jobkyunahilagrahi.vercel.app",
+        ...(process.env.BETTER_AUTH_URL ? [process.env.BETTER_AUTH_URL] : []),
+    ],
     plugins: [nextCookies()], // make sure this is the last plugin in the array
 });
