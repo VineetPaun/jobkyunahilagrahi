@@ -195,4 +195,4 @@ This project is open source and available under the MIT License.
 
 ---
 
-**Built with ❤️ using Better Auth and Next.js**
+**Built with ❤️**
