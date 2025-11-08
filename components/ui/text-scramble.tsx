@@ -75,7 +75,8 @@ export function TextScramble({
     if (!trigger) return;
 
     scramble();
-  }, [trigger, scramble]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trigger]);
 
   return (
     <MotionComponent className={className} {...props}>
