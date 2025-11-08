@@ -477,20 +477,52 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
   const handleCanvasToggle = () => setShowCanvas((prev) => !prev);
 
   const isImageFile = (file: File) => file.type.startsWith("image/");
+  const isPdfFile = (file: File) => file.type === "application/pdf";
 
-  const processFile = (file: File) => {
-    if (!isImageFile(file)) {
-      console.log("Only image files are allowed");
+  const processFile = async (file: File) => {
+    if (!isImageFile(file) && !isPdfFile(file)) {
+      console.log("Only image and PDF files are allowed");
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
       console.log("File too large (max 10MB)");
       return;
     }
+
     setFiles([file]);
-    const reader = new FileReader();
-    reader.onload = (e) => setFilePreviews({ [file.name]: e.target?.result as string });
-    reader.readAsDataURL(file);
+
+    if (isImageFile(file)) {
+      const reader = new FileReader();
+      reader.onload = (e) => setFilePreviews({ [file.name]: e.target?.result as string });
+      reader.readAsDataURL(file);
+    } else if (isPdfFile(file)) {
+      // Handle PDF file - parse content
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch('/api/parse-pdf', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('PDF Content:', data.content);
+          console.log('PDF Metadata:', data.metadata);
+          console.log('Total Pages:', data.metadata.totalPages);
+
+          // Store PDF info in previews for display
+          setFilePreviews({
+            [file.name]: `PDF: ${file.name} (${data.metadata.totalPages} pages)`
+          });
+        } else {
+          console.error('Failed to parse PDF');
+        }
+      } catch (error) {
+        console.error('Error parsing PDF:', error);
+      }
+    }
   };
 
   const handleDragOver = React.useCallback((e: React.DragEvent) => {
@@ -507,8 +539,8 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
     e.preventDefault();
     e.stopPropagation();
     const files = Array.from(e.dataTransfer.files);
-    const imageFiles = files.filter((file) => isImageFile(file));
-    if (imageFiles.length > 0) processFile(imageFiles[0]);
+    const acceptedFiles = files.filter((file) => isImageFile(file) || isPdfFile(file));
+    if (acceptedFiles.length > 0) processFile(acceptedFiles[0]);
   }, []);
 
   const handleRemoveFile = (index: number) => {
@@ -609,6 +641,30 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
                     </button>
                   </div>
                 )}
+                {file.type === "application/pdf" && (
+                  <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg px-3 py-2 pr-8 min-w-[200px]">
+                    <svg className="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                    </svg>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                        {file.name}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {filePreviews[file.name] || 'PDF file'}
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveFile(index);
+                      }}
+                      className="absolute top-1 right-1 rounded-full bg-black/70 p-0.5 opacity-100 transition-opacity"
+                    >
+                      <X className="h-3 w-3 text-white" />
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -649,7 +705,7 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
               isRecording ? "opacity-0 invisible h-0" : "opacity-100 visible"
             )}
           >
-            <PromptInputAction tooltip="Upload image">
+            <PromptInputAction tooltip="Upload image or PDF">
               <button
                 onClick={() => uploadInputRef.current?.click()}
                 className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-(--color-muted-foreground) transition-colors hover:bg-foreground/10 hover:text-(--color-foreground)"
@@ -664,7 +720,7 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
                     if (e.target.files && e.target.files.length > 0) processFile(e.target.files[0]);
                     if (e.target) e.target.value = "";
                   }}
-                  accept="image/*"
+                  accept="image/*,.pdf"
                 />
               </button>
             </PromptInputAction>

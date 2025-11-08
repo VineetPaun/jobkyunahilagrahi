@@ -7,6 +7,7 @@ import {
     ChatBubbleAvatar,
     ChatBubbleMessage,
 } from "@/components/ui/chat-bubble";
+import { processPdfAction } from "@/lib/actions";
 
 type ChatMessage = {
     id: string;
@@ -39,51 +40,157 @@ const ReviewPage = () => {
         }
     }, [messages]);
 
-    const handleSendMessage = (message: string, files?: File[]) => {
+    const handleSendMessage = async (message: string, files?: File[]) => {
         const trimmedMessage = message.trim();
-        if (!trimmedMessage) {
+        if (!trimmedMessage && (!files || files.length === 0)) {
             return;
         }
 
         const messageId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
+        // Add user message to chat
         setMessages((prev) => [
             ...prev,
             {
                 id: messageId,
                 role: "user",
-                content: trimmedMessage,
+                content: trimmedMessage || "📎 Uploaded file(s)",
                 avatar: USER_AVATAR,
             },
         ]);
 
         console.log("Message:", trimmedMessage);
+
+        // Process PDF files if uploaded
         if (files?.length) {
             console.log("Files:", files);
+
+            for (const file of files) {
+                if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
+                    console.log(`Processing PDF: ${file.name}`);
+
+                    const formData = new FormData();
+                    formData.append("file", file);
+
+                    try {
+                        const result = await processPdfAction(formData);
+
+                        if (result.success) {
+                            console.log("✅ PDF processed successfully in chat!");
+                            console.log("PDF Data:", result.data);
+
+                            // Add assistant response with PDF info
+                            setTimeout(() => {
+                                setMessages((prev) => {
+                                    const assistantId = `${messageId}-pdf-info`;
+                                    if (prev.some((entry) => entry.id === assistantId)) {
+                                        return prev;
+                                    }
+
+                                    const index = prev.findIndex((entry) => entry.id === messageId);
+                                    if (index === -1) {
+                                        return prev;
+                                    }
+
+                                    const nextMessages = [...prev];
+                                    nextMessages.splice(index + 1, 0, {
+                                        id: assistantId,
+                                        role: "assistant",
+                                        content: `I've received your PDF "${result.data?.fileName}" (${result.data?.totalPages} pages, ${Math.round((result.data?.fileSize || 0) / 1024)}KB).`,
+                                        avatar: ASSISTANT_AVATAR,
+                                    });
+                                    return nextMessages;
+                                });
+                            }, 600);
+                        } else {
+                            console.error("❌ PDF processing failed:", result.error);
+
+                            // Add error message to chat
+                            setTimeout(() => {
+                                setMessages((prev) => {
+                                    const errorId = `${messageId}-error`;
+                                    if (prev.some((entry) => entry.id === errorId)) {
+                                        return prev;
+                                    }
+
+                                    const index = prev.findIndex((entry) => entry.id === messageId);
+                                    if (index === -1) {
+                                        return prev;
+                                    }
+
+                                    const nextMessages = [...prev];
+                                    nextMessages.splice(index + 1, 0, {
+                                        id: errorId,
+                                        role: "assistant",
+                                        content: `❌ ${result.error || "Failed to process PDF"}`,
+                                        avatar: ASSISTANT_AVATAR,
+                                    });
+                                    return nextMessages;
+                                });
+                            }, 600);
+                        }
+                    } catch (error) {
+                        console.error("❌ Error processing PDF:", error);
+
+                        // Add error message to chat with helpful details
+                        setTimeout(() => {
+                            setMessages((prev) => {
+                                const errorId = `${messageId}-catch-error`;
+                                if (prev.some((entry) => entry.id === errorId)) {
+                                    return prev;
+                                }
+
+                                const index = prev.findIndex((entry) => entry.id === messageId);
+                                if (index === -1) {
+                                    return prev;
+                                }
+
+                                const errorMessage = error instanceof Error
+                                    ? error.message
+                                    : "Unable to process PDF. Please ensure it's a valid PDF file with max 2 pages.";
+
+                                const nextMessages = [...prev];
+                                nextMessages.splice(index + 1, 0, {
+                                    id: errorId,
+                                    role: "assistant",
+                                    content: `❌ ${errorMessage}`,
+                                    avatar: ASSISTANT_AVATAR,
+                                });
+                                return nextMessages;
+                            });
+                        }, 600);
+                    }
+                } else {
+                    console.log(`Skipping non-PDF file: ${file.name}`);
+                }
+            }
         }
 
-        setTimeout(() => {
-            setMessages((prev) => {
-                const assistantId = `${messageId}-ai`;
-                if (prev.some((entry) => entry.id === assistantId)) {
-                    return prev;
-                }
+        // Add a generic assistant response if there's a text message
+        if (trimmedMessage) {
+            setTimeout(() => {
+                setMessages((prev) => {
+                    const assistantId = `${messageId}-ai`;
+                    if (prev.some((entry) => entry.id === assistantId)) {
+                        return prev;
+                    }
 
-                const index = prev.findIndex((entry) => entry.id === messageId);
-                if (index === -1) {
-                    return prev;
-                }
+                    const index = prev.findIndex((entry) => entry.id === messageId);
+                    if (index === -1) {
+                        return prev;
+                    }
 
-                const nextMessages = [...prev];
-                nextMessages.splice(index + 1, 0, {
-                    id: assistantId,
-                    role: "assistant",
-                    content: `Thanks for sharing: "${trimmedMessage}"`,
-                    avatar: ASSISTANT_AVATAR,
+                    const nextMessages = [...prev];
+                    nextMessages.splice(index + 1, 0, {
+                        id: assistantId,
+                        role: "assistant",
+                        content: `Thanks for sharing: "${trimmedMessage}"`,
+                        avatar: ASSISTANT_AVATAR,
+                    });
+                    return nextMessages;
                 });
-                return nextMessages;
-            });
-        }, 600);
+            }, 600);
+        }
     };
 
     return (

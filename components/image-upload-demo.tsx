@@ -8,6 +8,7 @@ import { FileText, ImagePlus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useImageUpload } from "@/hooks/use-image-upload";
 import { cn } from "@/lib/utils";
+import { processPdfAction } from "@/lib/actions";
 
 const SUPPORTED_FORMAT = "PDF";
 
@@ -27,6 +28,7 @@ export function ImageUploadDemo() {
 
     const [isDragging, setIsDragging] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
+    const [isProcessing, setIsProcessing] = useState(false);
 
     useEffect(() => {
         if (!selectedFile) {
@@ -34,7 +36,39 @@ export function ImageUploadDemo() {
         }
 
         if (isPdfFile(selectedFile)) {
-            router.push("/review");
+            // Process the PDF file
+            const processPdf = async () => {
+                setIsProcessing(true);
+                try {
+                    const formData = new FormData();
+                    formData.append("file", selectedFile);
+
+                    const result = await processPdfAction(formData);
+
+                    if (result.success) {
+                        console.log("✅ PDF processed successfully!");
+                        console.log("PDF Data:", result.data);
+                        // Navigate to review page after successful processing
+                        router.push("/review");
+                    } else {
+                        console.error("❌ PDF processing failed:", result.error);
+                        setUploadError(result.error || "Failed to process PDF");
+                        handleRemove();
+                    }
+                } catch (error) {
+                    console.error("❌ Error processing PDF:", error);
+                    // Show a user-friendly error message
+                    const errorMessage = error instanceof Error
+                        ? error.message
+                        : "Unable to process PDF. Please ensure it's a valid PDF file with max 2 pages.";
+                    setUploadError(errorMessage);
+                    handleRemove();
+                } finally {
+                    setIsProcessing(false);
+                }
+            };
+
+            processPdf();
             return;
         }
 
@@ -112,7 +146,7 @@ export function ImageUploadDemo() {
             <div className="space-y-2">
                 <h3 className="text-lg font-medium">Upload Your Resume</h3>
                 <p className="text-sm text-muted-foreground">
-                    Supported formats: {SUPPORTED_FORMAT}
+                    Supported formats: {SUPPORTED_FORMAT} (max 2 pages)
                 </p>
             </div>
 
@@ -133,6 +167,7 @@ export function ImageUploadDemo() {
                 className={cn(
                     "flex h-64 cursor-pointer flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/50 transition-colors hover:bg-muted",
                     isDragging && "border-primary/50 bg-primary/5",
+                    isProcessing && "cursor-wait opacity-60",
                 )}
             >
                 {selectedFile ? (
@@ -142,7 +177,7 @@ export function ImageUploadDemo() {
                             {fileName}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                            Redirecting to the review page...
+                            {isProcessing ? "Processing PDF..." : "Redirecting to the review page..."}
                         </p>
                     </div>
                 ) : (
