@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Equal, X, LogOut, User } from 'lucide-react'
+import { Equal, X, LogOut, User, Github, Linkedin } from 'lucide-react'
 import { LiquidButton } from '@/components/liquid-glass-button'
 import React from 'react'
 import { cn } from '@/lib/utils'
@@ -112,6 +112,24 @@ export const Header = () => {
 
                         {/* Right Side - Theme Switcher & Auth Buttons */}
                         <div className="hidden lg:flex items-center gap-3">
+                            <a
+                                href="https://github.com/VineetPaun"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-2 hover:bg-accent rounded-lg transition-colors"
+                                aria-label="GitHub Profile"
+                            >
+                                <Github className="size-5" />
+                            </a>
+                            <a
+                                href="https://www.linkedin.com/in/vineetpaun/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-2 hover:bg-accent rounded-lg transition-colors"
+                                aria-label="LinkedIn Profile"
+                            >
+                                <Linkedin className="size-5" />
+                            </a>
                             <ThemeSwitcher />
                             {!loading && (
                                 session ? (
@@ -187,7 +205,27 @@ export const Header = () => {
                                 </ul>
                             </div>
                             <div className="flex flex-col space-y-3">
-                                <ThemeSwitcher />
+                                <div className="flex items-center gap-3">
+                                    <a
+                                        href="https://github.com/VineetPaun"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-2 hover:bg-accent rounded-lg transition-colors flex-1 flex justify-center"
+                                        aria-label="GitHub Profile"
+                                    >
+                                        <Github className="size-5" />
+                                    </a>
+                                    <a
+                                        href="https://www.linkedin.com/in/vineetpaun/"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-2 hover:bg-accent rounded-lg transition-colors flex-1 flex justify-center"
+                                        aria-label="LinkedIn Profile"
+                                    >
+                                        <Linkedin className="size-5" />
+                                    </a>
+                                    <ThemeSwitcher />
+                                </div>
                                 {!loading && (
                                     session ? (
                                         <DropdownMenu>
