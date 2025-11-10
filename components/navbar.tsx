@@ -162,14 +162,14 @@ export const Header = () => {
                                             size="lg"
                                             className="h-11 px-6 font-semibold"
                                         >
-                                            <Link href="/sign-in">Sign In</Link>
+                                            <Link href="/sign-in">Login</Link>
                                         </LiquidButton>
                                         <LiquidButton
                                             asChild
                                             size="lg"
                                             className="h-11 px-6 font-semibold"
                                         >
-                                            <Link href="/sign-up">Sign Up</Link>
+                                            <Link href="/sign-up">Register</Link>
                                         </LiquidButton>
                                     </>
                                 )
@@ -251,14 +251,14 @@ export const Header = () => {
                                                 size="lg"
                                                 className="w-full h-11 justify-center font-semibold"
                                             >
-                                                <Link href="/sign-in">Sign In</Link>
+                                                <Link href="/sign-in">Login</Link>
                                             </LiquidButton>
                                             <LiquidButton
                                                 asChild
                                                 size="lg"
                                                 className="w-full h-11 justify-center font-semibold"
                                             >
-                                                <Link href="/sign-up">Sign Up</Link>
+                                                <Link href="/sign-up">Register</Link>
                                             </LiquidButton>
                                         </>
                                     )
