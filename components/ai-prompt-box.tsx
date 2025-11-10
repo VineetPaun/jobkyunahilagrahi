@@ -4,6 +4,15 @@ import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { ArrowUp, Paperclip, Square, X, StopCircle, Mic, Globe, BrainCog, FolderCode } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // Utility function for className merging
 const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(" ");
@@ -720,17 +729,34 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
           >
             {/* Model Selector */}
             <PromptInputAction tooltip="Select AI Model">
-              <select
-                value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
-                className="h-8 px-2 py-1 text-xs rounded-full border border-(--color-border) bg-(--color-card) text-(--color-foreground) hover:bg-foreground/10 transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-(--color-ring)"
-                disabled={isRecording}
-              >
-                <option value="gpt-oss-20b">GPT OSS 20B</option>
-                <option value="deepseek/deepseek-chat-v3.1">DeepSeek v3.1</option>
-                <option value="zhipuai/glm-4.5-air">GLM 4.5 Air</option>
-                <option value="moonshot/kimi-k2-0711">Kimi K2</option>
-              </select>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="h-8 px-3 py-1 text-xs rounded-full border border-(--color-border) bg-(--color-card) text-(--color-foreground) hover:bg-foreground/10 transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-(--color-ring) flex items-center gap-2"
+                    disabled={isRecording}
+                  >
+                    <span className="truncate max-w-[120px]">
+                      {selectedModel === "gpt-oss-20b" && "GPT OSS 20B"}
+                      {selectedModel === "deepseek/deepseek-chat-v3.1" && "DeepSeek v3.1"}
+                      {selectedModel === "zhipuai/glm-4.5-air" && "GLM 4.5 Air"}
+                      {selectedModel === "moonshot/kimi-k2-0711" && "Kimi K2"}
+                    </span>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56">
+                  <DropdownMenuLabel>AI Models</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuRadioGroup value={selectedModel} onValueChange={setSelectedModel}>
+                    <DropdownMenuRadioItem value="gpt-oss-20b">GPT OSS 20B</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="deepseek/deepseek-chat-v3.1">DeepSeek v3.1</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="zhipuai/glm-4.5-air">GLM 4.5 Air</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="moonshot/kimi-k2-0711">Kimi K2</DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </PromptInputAction>
 
             <PromptInputAction tooltip="Upload image or PDF">
