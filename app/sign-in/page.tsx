@@ -22,13 +22,13 @@ export default function SignInPage() {
             const { error } = await authClient.signIn.email({
                 email,
                 password,
-                callbackURL: "/dashboard",
+                callbackURL: "/",
             });
 
             if (error) {
                 setError(error.message || "Failed to sign in");
             } else {
-                router.push("/dashboard");
+                router.push("/");
             }
         } catch {
             setError("An unexpected error occurred");

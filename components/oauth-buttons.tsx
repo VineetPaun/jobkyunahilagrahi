@@ -9,14 +9,14 @@ export function OAuthButtons() {
     const handleGoogleSignIn = async () => {
         await authClient.signIn.social({
             provider: "google",
-            callbackURL: "/dashboard",
+            callbackURL: "/",
         });
     };
 
     const handleGitHubSignIn = async () => {
         await authClient.signIn.social({
             provider: "github",
-            callbackURL: "/dashboard",
+            callbackURL: "/",
         });
     };
 

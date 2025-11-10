@@ -2,7 +2,7 @@
 import React from "react";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { ArrowUp, Paperclip, Square, X, StopCircle, Mic, Globe, BrainCog, FolderCode } from "lucide-react";
+import { ArrowUp, Paperclip, Square, X, StopCircle, Mic } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   DropdownMenu,
@@ -352,7 +352,6 @@ const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
             ref={ref}
             className={cn(
               "rounded-3xl border border-(--color-border) bg-(--color-card) p-2 text-(--color-foreground) shadow-[0_8px_30px_rgba(0,0,0,0.24)] transition-all duration-300",
-              isLoading && "border-red-500/70",
               className
             )}
             onDragOver={onDragOver}
@@ -446,36 +445,22 @@ const PromptInputAction: React.FC<PromptInputActionProps> = ({
   );
 };
 
-// Custom Divider Component
-const CustomDivider: React.FC = () => (
-  <div className="relative h-6 w-[1.5px] mx-1">
-    <div
-      className="absolute inset-0 bg-linear-to-t from-transparent via-[#9b87f5]/70 to-transparent rounded-full"
-      style={{
-        clipPath: "polygon(0% 0%, 100% 0%, 100% 40%, 140% 50%, 100% 60%, 100% 100%, 0% 100%, 0% 60%, -40% 50%, 0% 40%)",
-      }}
-    />
-  </div>
-);
-
 // Main PromptInputBox Component
 interface PromptInputBoxProps {
   onSend?: (message: string, files?: File[], selectedModel?: string) => void;
+  onStop?: () => void;
   isLoading?: boolean;
   placeholder?: string;
   className?: string;
   defaultModel?: string;
 }
 export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref: React.Ref<HTMLDivElement>) => {
-  const { onSend = () => { }, isLoading = false, placeholder = "Type your message here...", className, defaultModel = "deepseek/deepseek-chat-v3.1" } = props;
+  const { onSend = () => { }, onStop, isLoading = false, placeholder = "Type your message here...", className, defaultModel = "deepseek/deepseek-chat-v3.1" } = props;
   const [input, setInput] = React.useState("");
   const [files, setFiles] = React.useState<File[]>([]);
   const [filePreviews, setFilePreviews] = React.useState<{ [key: string]: string }>({});
   const [selectedImage, setSelectedImage] = React.useState<string | null>(null);
   const [isRecording, setIsRecording] = React.useState(false);
-  const [showSearch, setShowSearch] = React.useState(false);
-  const [showThink, setShowThink] = React.useState(false);
-  const [showCanvas, setShowCanvas] = React.useState(false);
   const [selectedModel, setSelectedModel] = React.useState(defaultModel);
   const uploadInputRef = React.useRef<HTMLInputElement>(null);
   const promptBoxRef = React.useRef<HTMLDivElement>(null);
@@ -483,18 +468,6 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
   React.useEffect(() => {
     ensureStylesInjected();
   }, []);
-
-  const handleToggleChange = (value: string) => {
-    if (value === "search") {
-      setShowSearch((prev) => !prev);
-      setShowThink(false);
-    } else if (value === "think") {
-      setShowThink((prev) => !prev);
-      setShowSearch(false);
-    }
-  };
-
-  const handleCanvasToggle = () => setShowCanvas((prev) => !prev);
 
   const isImageFile = (file: File) => file.type.startsWith("image/");
   const isPdfFile = (file: File) => file.type === "application/pdf";
@@ -597,12 +570,7 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
   const handleSubmit = () => {
     if (isLoading) return; // Prevent submission while streaming
     if (input.trim() || files.length > 0) {
-      let messagePrefix = "";
-      if (showSearch) messagePrefix = "[Search: ";
-      else if (showThink) messagePrefix = "[Think: ";
-      else if (showCanvas) messagePrefix = "[Canvas: ";
-      const formattedInput = messagePrefix ? `${messagePrefix}${input}]` : input;
-      onSend(formattedInput, files, selectedModel);
+      onSend(input, files, selectedModel);
       setInput("");
       setFiles([]);
       setFilePreviews({});
@@ -699,15 +667,7 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
           )}
         >
           <PromptInputTextarea
-            placeholder={
-              showSearch
-                ? "Search the web..."
-                : showThink
-                  ? "Think deeply..."
-                  : showCanvas
-                    ? "Create on canvas..."
-                    : placeholder
-            }
+            placeholder={placeholder}
             className="text-base"
           />
         </div>
@@ -778,114 +738,6 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
                 />
               </button>
             </PromptInputAction>
-
-            <div className="flex items-center">
-              <button
-                type="button"
-                onClick={() => handleToggleChange("search")}
-                className={cn(
-                  "flex h-8 items-center gap-1 rounded-full border px-2 py-1 transition-all",
-                  showSearch
-                    ? "bg-[#1EAEDB]/15 border-[#1EAEDB] text-[#1EAEDB]"
-                    : "border-transparent bg-transparent text-(--color-muted-foreground) hover:text-(--color-foreground)"
-                )}
-              >
-                <div className="w-5 h-5 flex items-center justify-center shrink-0">
-                  <motion.div
-                    animate={{ rotate: showSearch ? 360 : 0, scale: showSearch ? 1.1 : 1 }}
-                    whileHover={{ rotate: showSearch ? 360 : 15, scale: 1.1, transition: { type: "spring", stiffness: 300, damping: 10 } }}
-                    transition={{ type: "spring", stiffness: 260, damping: 25 }}
-                  >
-                    <Globe className={cn("w-4 h-4", showSearch ? "text-[#1EAEDB]" : "text-inherit")} />
-                  </motion.div>
-                </div>
-                <AnimatePresence>
-                  {showSearch && (
-                    <motion.span
-                      initial={{ width: 0, opacity: 0 }}
-                      animate={{ width: "auto", opacity: 1 }}
-                      exit={{ width: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="text-xs overflow-hidden whitespace-nowrap text-[#1EAEDB] shrink-0"
-                    >
-                      Search
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </button>
-
-              <CustomDivider />
-
-              <button
-                type="button"
-                onClick={() => handleToggleChange("think")}
-                className={cn(
-                  "flex h-8 items-center gap-1 rounded-full border px-2 py-1 transition-all",
-                  showThink
-                    ? "bg-[#8B5CF6]/15 border-[#8B5CF6] text-[#8B5CF6]"
-                    : "border-transparent bg-transparent text-(--color-muted-foreground) hover:text-(--color-foreground)"
-                )}
-              >
-                <div className="w-5 h-5 flex items-center justify-center shrink-0">
-                  <motion.div
-                    animate={{ rotate: showThink ? 360 : 0, scale: showThink ? 1.1 : 1 }}
-                    whileHover={{ rotate: showThink ? 360 : 15, scale: 1.1, transition: { type: "spring", stiffness: 300, damping: 10 } }}
-                    transition={{ type: "spring", stiffness: 260, damping: 25 }}
-                  >
-                    <BrainCog className={cn("w-4 h-4", showThink ? "text-[#8B5CF6]" : "text-inherit")} />
-                  </motion.div>
-                </div>
-                <AnimatePresence>
-                  {showThink && (
-                    <motion.span
-                      initial={{ width: 0, opacity: 0 }}
-                      animate={{ width: "auto", opacity: 1 }}
-                      exit={{ width: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="text-xs overflow-hidden whitespace-nowrap text-[#8B5CF6] shrink-0"
-                    >
-                      Think
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </button>
-
-              <CustomDivider />
-
-              <button
-                type="button"
-                onClick={handleCanvasToggle}
-                className={cn(
-                  "flex h-8 items-center gap-1 rounded-full border px-2 py-1 transition-all",
-                  showCanvas
-                    ? "bg-[#F97316]/15 border-[#F97316] text-[#F97316]"
-                    : "border-transparent bg-transparent text-(--color-muted-foreground) hover:text-(--color-foreground)"
-                )}
-              >
-                <div className="w-5 h-5 flex items-center justify-center shrink-0">
-                  <motion.div
-                    animate={{ rotate: showCanvas ? 360 : 0, scale: showCanvas ? 1.1 : 1 }}
-                    whileHover={{ rotate: showCanvas ? 360 : 15, scale: 1.1, transition: { type: "spring", stiffness: 300, damping: 10 } }}
-                    transition={{ type: "spring", stiffness: 260, damping: 25 }}
-                  >
-                    <FolderCode className={cn("w-4 h-4", showCanvas ? "text-[#F97316]" : "text-inherit")} />
-                  </motion.div>
-                </div>
-                <AnimatePresence>
-                  {showCanvas && (
-                    <motion.span
-                      initial={{ width: 0, opacity: 0 }}
-                      animate={{ width: "auto", opacity: 1 }}
-                      exit={{ width: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="text-xs overflow-hidden whitespace-nowrap text-[#F97316] shrink-0"
-                    >
-                      Canvas
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </button>
-            </div>
           </div>
 
           <PromptInputAction
@@ -909,18 +761,24 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
                   : hasContent && !isLoading
                     ? "bg-white hover:bg-white/80 text-[#1F2023]"
                     : isLoading
-                      ? "bg-gray-400 text-white cursor-not-allowed opacity-60"
+                      ? "bg-red-500 hover:bg-red-600 text-white cursor-pointer"
                       : "bg-transparent hover:bg-gray-600/30 text-[#9CA3AF] hover:text-[#D1D5DB]"
               )}
               onClick={() => {
-                if (isRecording) setIsRecording(false);
-                else if (hasContent && !isLoading) handleSubmit();
-                else if (!isLoading) setIsRecording(true);
+                if (isLoading && onStop) {
+                  onStop();
+                } else if (isRecording) {
+                  setIsRecording(false);
+                } else if (hasContent && !isLoading) {
+                  handleSubmit();
+                } else if (!isLoading) {
+                  setIsRecording(true);
+                }
               }}
-              disabled={isLoading}
+              disabled={false}
             >
               {isLoading ? (
-                <Square className="h-4 w-4 fill-[#1F2023] animate-pulse" />
+                <Square className="h-4 w-4 fill-white" />
               ) : isRecording ? (
                 <StopCircle className="h-5 w-5 text-red-500" />
               ) : hasContent ? (

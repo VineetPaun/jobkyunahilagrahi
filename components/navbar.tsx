@@ -19,7 +19,6 @@ import {
 
 const menuItems = [
     { name: 'Home', href: '/' },
-    { name: 'Dashboard', href: '/dashboard' },
     { name: 'Review', href: '/review' }
 ]
 
@@ -148,12 +147,6 @@ export const Header = () => {
                                         <DropdownMenuContent align="end" className="w-56">
                                             <DropdownMenuLabel>My Account</DropdownMenuLabel>
                                             <DropdownMenuSeparator />
-                                            <DropdownMenuItem asChild>
-                                                <Link href="/dashboard" className="cursor-pointer">
-                                                    Dashboard
-                                                </Link>
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
                                             <DropdownMenuItem
                                                 onClick={handleSignOut}
                                                 className="cursor-pointer text-destructive focus:text-destructive">
@@ -242,12 +235,6 @@ export const Header = () => {
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end" className="w-56">
                                                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem asChild>
-                                                    <Link href="/dashboard" className="cursor-pointer">
-                                                        Dashboard
-                                                    </Link>
-                                                </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
                                                 <DropdownMenuItem
                                                     onClick={handleSignOut}

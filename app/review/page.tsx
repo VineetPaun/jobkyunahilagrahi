@@ -8,7 +8,9 @@ import {
     ChatBubbleAvatar,
     ChatBubbleMessage,
 } from "@/components/ui/chat-bubble";
+import { CopyButton } from "@/components/copy-button";
 import { processPdfAction } from "@/lib/actions";
+import { authClient } from "@/lib/auth-client";
 
 type ChatMessage = {
     id: string;
@@ -18,11 +20,6 @@ type ChatMessage = {
         src?: string;
         fallback: string;
     };
-};
-
-const USER_AVATAR = {
-    fallback: "US",
-    src: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=64&h=64&q=80&crop=faces&fit=crop",
 };
 
 const ASSISTANT_AVATAR = {
@@ -35,6 +32,24 @@ const ReviewPage = () => {
     const [resumeContext, setResumeContext] = React.useState<string>("");
     const [isStreaming, setIsStreaming] = React.useState(false);
     const chatContainerRef = React.useRef<HTMLDivElement | null>(null);
+    const abortControllerRef = React.useRef<AbortController | null>(null);
+    const [userAvatar, setUserAvatar] = React.useState<{ fallback: string; src?: string }>({
+        fallback: "US",
+    });
+
+    // Fetch user session and avatar
+    React.useEffect(() => {
+        const fetchUserData = async () => {
+            const session = await authClient.getSession();
+            if (session?.data?.user) {
+                setUserAvatar({
+                    fallback: session.data.user.name?.substring(0, 2).toUpperCase() || "US",
+                    src: session.data.user.image || undefined,
+                });
+            }
+        };
+        fetchUserData();
+    }, []);
 
     // Load initial analysis from sessionStorage when component mounts
     React.useEffect(() => {
@@ -54,7 +69,7 @@ const ReviewPage = () => {
                 id: `initial-upload-${Date.now()}`,
                 role: 'user',
                 content: '📎 Uploaded resume from home page',
-                avatar: USER_AVATAR,
+                avatar: userAvatar,
             }]);
 
             const assistantMessageId = `initial-analysis-${Date.now()}`;
@@ -73,6 +88,9 @@ const ReviewPage = () => {
             // Set streaming state
             setIsStreaming(true);
 
+            // Create AbortController for this request
+            abortControllerRef.current = new AbortController();
+
             // Make the AI API call with streaming
             fetch('/api/chat', {
                 method: 'POST',
@@ -81,6 +99,7 @@ const ReviewPage = () => {
                     message: `I've uploaded my resume. Please analyze it and provide detailed feedback on:\n1. Overall structure and formatting\n2. Content quality and impact\n3. ATS optimization\n4. Key strengths and areas for improvement\n5. Actionable suggestions for enhancement\n\nHere's my resume content:\n\n${storedResumeContent}`,
                     resumeContext: storedResumeContent,
                 }),
+                signal: abortControllerRef.current.signal,
             })
                 .then(async response => {
                     const reader = response.body?.getReader();
@@ -124,8 +143,13 @@ const ReviewPage = () => {
                         }
                     }
                     setIsStreaming(false);
+                    abortControllerRef.current = null;
                 })
                 .catch(error => {
+                    if (error.name === 'AbortError') {
+                        console.log('Stream was aborted by user');
+                        return;
+                    }
                     console.error('Error analyzing resume:', error);
                     setMessages(prev =>
                         prev.map(msg =>
@@ -135,6 +159,7 @@ const ReviewPage = () => {
                         )
                     );
                     setIsStreaming(false);
+                    abortControllerRef.current = null;
                 });
         }
     }, []);
@@ -145,6 +170,14 @@ const ReviewPage = () => {
             container.scrollTop = container.scrollHeight;
         }
     }, [messages]);
+
+    const handleStopStreaming = () => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+            abortControllerRef.current = null;
+            setIsStreaming(false);
+        }
+    };
 
     const handleSendMessage = async (message: string, files?: File[], selectedModel?: string) => {
         const trimmedMessage = message.trim();
@@ -161,7 +194,7 @@ const ReviewPage = () => {
                 id: messageId,
                 role: "user",
                 content: trimmedMessage || "📎 Uploaded file(s)",
-                avatar: USER_AVATAR,
+                avatar: userAvatar,
             },
         ]);
 
@@ -195,6 +228,9 @@ const ReviewPage = () => {
                             // Set streaming state
                             setIsStreaming(true);
 
+                            // Create AbortController for this request
+                            abortControllerRef.current = new AbortController();
+
                             // Send to AI with resume context (streaming)
                             const aiResponse = await fetch('/api/chat', {
                                 method: 'POST',
@@ -208,6 +244,7 @@ const ReviewPage = () => {
                                         content: m.content
                                     })),
                                 }),
+                                signal: abortControllerRef.current.signal,
                             });
 
                             const reader = aiResponse.body?.getReader();
@@ -249,6 +286,7 @@ const ReviewPage = () => {
                                 }
                             }
                             setIsStreaming(false);
+                            abortControllerRef.current = null;
                         } else {
                             setMessages((prev) => [
                                 ...prev,
@@ -261,6 +299,10 @@ const ReviewPage = () => {
                             ]);
                         }
                     } catch (error) {
+                        if (error instanceof Error && error.name === 'AbortError') {
+                            console.log('Stream was aborted by user');
+                            return;
+                        }
                         console.error("Error processing PDF:", error);
                         setMessages((prev) => [
                             ...prev,
@@ -272,6 +314,7 @@ const ReviewPage = () => {
                             },
                         ]);
                         setIsStreaming(false);
+                        abortControllerRef.current = null;
                     }
                 }
             }
@@ -295,6 +338,9 @@ const ReviewPage = () => {
             // Set streaming state
             setIsStreaming(true);
 
+            // Create AbortController for this request
+            abortControllerRef.current = new AbortController();
+
             try {
                 const aiResponse = await fetch('/api/chat', {
                     method: 'POST',
@@ -308,6 +354,7 @@ const ReviewPage = () => {
                             content: m.content
                         })),
                     }),
+                    signal: abortControllerRef.current.signal,
                 });
 
                 const reader = aiResponse.body?.getReader();
@@ -349,7 +396,12 @@ const ReviewPage = () => {
                     }
                 }
                 setIsStreaming(false);
+                abortControllerRef.current = null;
             } catch (error) {
+                if (error instanceof Error && error.name === 'AbortError') {
+                    console.log('Stream was aborted by user');
+                    return;
+                }
                 console.error("Error getting AI response:", error);
                 setMessages((prev) =>
                     prev.map(msg =>
@@ -359,6 +411,7 @@ const ReviewPage = () => {
                     )
                 );
                 setIsStreaming(false);
+                abortControllerRef.current = null;
             }
         }
     };
@@ -373,7 +426,7 @@ const ReviewPage = () => {
                     {messages.length === 0 && (
                         <div className="flex h-full items-center justify-center text-center">
                             <div className="space-y-3">
-                                <h2 className="text-2xl font-semibold">Welcome to Resume Review</h2>
+                                <h2 className="text-2xl font-semibold">Welcome to JobKyuNahiLagRahi</h2>
                                 <p className="text-muted-foreground">
                                     Upload your resume to get started, or ask me anything about your job search!
                                 </p>
@@ -383,97 +436,107 @@ const ReviewPage = () => {
                     {messages.map((message) => {
                         const isUser = message.role === "user";
                         return (
-                            <ChatBubble
-                                key={message.id}
-                                variant={isUser ? "sent" : "received"}
-                            >
-                                <ChatBubbleAvatar
-                                    fallback={message.avatar?.fallback ?? (isUser ? "US" : "AI")}
-                                    src={message.avatar?.src}
-                                />
-                                <ChatBubbleMessage
+                            <div key={message.id}>
+                                <ChatBubble
                                     variant={isUser ? "sent" : "received"}
                                 >
-                                    {isUser ? (
-                                        <div className="whitespace-pre-wrap">
-                                            {message.content}
-                                        </div>
-                                    ) : (
-                                        <div className="prose prose-sm dark:prose-invert max-w-none">
-                                            <ReactMarkdown
-                                                remarkPlugins={[remarkGfm]}
-                                                components={{
-                                                    p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                                                    ul: ({ children }) => <ul className="list-disc ml-4 mb-2">{children}</ul>,
-                                                    ol: ({ children }) => <ol className="list-decimal ml-4 mb-2">{children}</ol>,
-                                                    li: ({ children }) => <li className="mb-1">{children}</li>,
-                                                    h1: ({ children }) => <h1 className="text-xl font-bold mb-2 mt-4 first:mt-0">{children}</h1>,
-                                                    h2: ({ children }) => <h2 className="text-lg font-bold mb-2 mt-3 first:mt-0">{children}</h2>,
-                                                    h3: ({ children }) => <h3 className="text-base font-bold mb-2 mt-2 first:mt-0">{children}</h3>,
-                                                    h4: ({ children }) => <h4 className="text-sm font-bold mb-1 mt-2">{children}</h4>,
-                                                    code: ({ className, children, ...props }) => {
-                                                        const isInline = !className;
-                                                        return isInline ? (
-                                                            <code className="bg-muted px-1 py-0.5 rounded text-sm font-mono" {...props}>
-                                                                {children}
-                                                            </code>
-                                                        ) : (
-                                                            <code className={`block bg-muted p-2 rounded text-sm font-mono overflow-x-auto ${className}`} {...props}>
-                                                                {children}
-                                                            </code>
-                                                        );
-                                                    },
-                                                    pre: ({ children }) => <pre className="bg-muted p-3 rounded-md overflow-x-auto mb-2">{children}</pre>,
-                                                    strong: ({ children }) => <strong className="font-bold">{children}</strong>,
-                                                    em: ({ children }) => <em className="italic">{children}</em>,
-                                                    blockquote: ({ children }) => <blockquote className="border-l-4 border-primary pl-4 italic my-2">{children}</blockquote>,
-                                                    hr: () => <hr className="my-4 border-border" />,
-                                                    // Table components
-                                                    table: ({ children }) => (
-                                                        <div className="overflow-x-auto my-4">
-                                                            <table className="min-w-full divide-y divide-border border border-border rounded-lg">
-                                                                {children}
-                                                            </table>
-                                                        </div>
-                                                    ),
-                                                    thead: ({ children }) => (
-                                                        <thead className="bg-muted">
-                                                            {children}
-                                                        </thead>
-                                                    ),
-                                                    tbody: ({ children }) => (
-                                                        <tbody className="divide-y divide-border bg-background">
-                                                            {children}
-                                                        </tbody>
-                                                    ),
-                                                    tr: ({ children }) => (
-                                                        <tr className="hover:bg-muted/50 transition-colors">
-                                                            {children}
-                                                        </tr>
-                                                    ),
-                                                    th: ({ children }) => (
-                                                        <th className="px-4 py-3 text-left text-sm font-semibold">
-                                                            {children}
-                                                        </th>
-                                                    ),
-                                                    td: ({ children }) => (
-                                                        <td className="px-4 py-3 text-sm">
-                                                            {children}
-                                                        </td>
-                                                    ),
-                                                }}
-                                            >
+                                    <ChatBubbleAvatar
+                                        fallback={message.avatar?.fallback ?? (isUser ? "US" : "AI")}
+                                        src={message.avatar?.src}
+                                    />
+                                    <ChatBubbleMessage
+                                        variant={isUser ? "sent" : "received"}
+                                    >
+                                        {isUser ? (
+                                            <div className="whitespace-pre-wrap">
                                                 {message.content}
-                                            </ReactMarkdown>
-                                        </div>
-                                    )}
-                                </ChatBubbleMessage>
-                            </ChatBubble>
+                                            </div>
+                                        ) : (
+                                            <div className="prose prose-sm dark:prose-invert max-w-none">
+                                                <ReactMarkdown
+                                                    remarkPlugins={[remarkGfm]}
+                                                    components={{
+                                                        p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                                                        ul: ({ children }) => <ul className="list-disc ml-4 mb-2">{children}</ul>,
+                                                        ol: ({ children }) => <ol className="list-decimal ml-4 mb-2">{children}</ol>,
+                                                        li: ({ children }) => <li className="mb-1">{children}</li>,
+                                                        h1: ({ children }) => <h1 className="text-xl font-bold mb-2 mt-4 first:mt-0">{children}</h1>,
+                                                        h2: ({ children }) => <h2 className="text-lg font-bold mb-2 mt-3 first:mt-0">{children}</h2>,
+                                                        h3: ({ children }) => <h3 className="text-base font-bold mb-2 mt-2 first:mt-0">{children}</h3>,
+                                                        h4: ({ children }) => <h4 className="text-sm font-bold mb-1 mt-2">{children}</h4>,
+                                                        code: ({ className, children, ...props }) => {
+                                                            const isInline = !className;
+                                                            return isInline ? (
+                                                                <code className="bg-muted px-1 py-0.5 rounded text-sm font-mono" {...props}>
+                                                                    {children}
+                                                                </code>
+                                                            ) : (
+                                                                <code className={`block bg-muted p-2 rounded text-sm font-mono overflow-x-auto ${className}`} {...props}>
+                                                                    {children}
+                                                                </code>
+                                                            );
+                                                        },
+                                                        pre: ({ children }) => <pre className="bg-muted p-3 rounded-md overflow-x-auto mb-2">{children}</pre>,
+                                                        strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+                                                        em: ({ children }) => <em className="italic">{children}</em>,
+                                                        blockquote: ({ children }) => <blockquote className="border-l-4 border-primary pl-4 italic my-2">{children}</blockquote>,
+                                                        hr: () => <hr className="my-4 border-border" />,
+                                                        // Table components
+                                                        table: ({ children }) => (
+                                                            <div className="overflow-x-auto my-4">
+                                                                <table className="min-w-full divide-y divide-border border border-border rounded-lg">
+                                                                    {children}
+                                                                </table>
+                                                            </div>
+                                                        ),
+                                                        thead: ({ children }) => (
+                                                            <thead className="bg-muted">
+                                                                {children}
+                                                            </thead>
+                                                        ),
+                                                        tbody: ({ children }) => (
+                                                            <tbody className="divide-y divide-border bg-background">
+                                                                {children}
+                                                            </tbody>
+                                                        ),
+                                                        tr: ({ children }) => (
+                                                            <tr className="hover:bg-muted/50 transition-colors">
+                                                                {children}
+                                                            </tr>
+                                                        ),
+                                                        th: ({ children }) => (
+                                                            <th className="px-4 py-3 text-left text-sm font-semibold">
+                                                                {children}
+                                                            </th>
+                                                        ),
+                                                        td: ({ children }) => (
+                                                            <td className="px-4 py-3 text-sm">
+                                                                {children}
+                                                            </td>
+                                                        ),
+                                                    }}
+                                                >
+                                                    {message.content}
+                                                </ReactMarkdown>
+                                            </div>
+                                        )}
+                                    </ChatBubbleMessage>
+                                </ChatBubble>
+                                {!isUser && message.content && (
+                                    <div className="flex justify-start ml-10 mt-1">
+                                        <CopyButton textToCopy={message.content} />
+                                    </div>
+                                )}
+                            </div>
                         );
                     })}
                 </div>
                 <div className="sticky bottom-3 left-0 right-0 w-full bg-background pt-4">
-                    <PromptInputBox onSend={handleSendMessage} isLoading={isStreaming} />
+                    <PromptInputBox
+                        onSend={handleSendMessage}
+                        onStop={handleStopStreaming}
+                        isLoading={isStreaming}
+                    />
                 </div>
             </div>
         </div>

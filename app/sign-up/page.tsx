@@ -24,13 +24,13 @@ export default function SignUpPage() {
                 email,
                 password,
                 name,
-                callbackURL: "/dashboard",
+                callbackURL: "/",
             });
 
             if (error) {
                 setError(error.message || "Failed to sign up");
             } else {
-                router.push("/dashboard");
+                router.push("/");
             }
         } catch {
             setError("An unexpected error occurred");
