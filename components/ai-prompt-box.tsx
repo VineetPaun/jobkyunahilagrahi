@@ -462,6 +462,7 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
   const [selectedImage, setSelectedImage] = React.useState<string | null>(null);
   const [isRecording, setIsRecording] = React.useState(false);
   const [selectedModel, setSelectedModel] = React.useState(defaultModel);
+  const [isRoastMode, setIsRoastMode] = React.useState(false);
   const uploadInputRef = React.useRef<HTMLInputElement>(null);
   const promptBoxRef = React.useRef<HTMLDivElement>(null);
 
@@ -570,7 +571,8 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
   const handleSubmit = () => {
     if (isLoading) return; // Prevent submission while streaming
     if (input.trim() || files.length > 0) {
-      onSend(input, files, selectedModel);
+      const modelToUse = isRoastMode ? "cognitivecomputations/dolphin-mistral-24b-venice-edition:free" : selectedModel;
+      onSend(input, files, modelToUse);
       setInput("");
       setFiles([]);
       setFilePreviews({});
@@ -687,37 +689,56 @@ export const PromptInputBox = React.forwardRef((props: PromptInputBoxProps, ref:
               isRecording ? "opacity-0 invisible h-0" : "opacity-100 visible"
             )}
           >
-            {/* Model Selector */}
-            <PromptInputAction tooltip="Select AI Model">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    className="h-8 px-3 py-1 text-xs rounded-full border border-(--color-border) bg-(--color-card) text-(--color-foreground) hover:bg-foreground/10 transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-(--color-ring) flex items-center gap-2"
-                    disabled={isRecording}
-                  >
-                    <span className="truncate max-w-[120px]">
-                      {selectedModel === "gpt-oss-20b" && "GPT OSS 20B"}
-                      {selectedModel === "deepseek/deepseek-chat-v3.1" && "DeepSeek v3.1"}
-                      {selectedModel === "zhipuai/glm-4.5-air" && "GLM 4.5 Air"}
-                      {selectedModel === "moonshot/kimi-k2-0711" && "Kimi K2"}
-                    </span>
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56">
-                  <DropdownMenuLabel>AI Models</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuRadioGroup value={selectedModel} onValueChange={setSelectedModel}>
-                    <DropdownMenuRadioItem value="gpt-oss-20b">GPT OSS 20B</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="deepseek/deepseek-chat-v3.1">DeepSeek v3.1</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="zhipuai/glm-4.5-air">GLM 4.5 Air</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="moonshot/kimi-k2-0711">Kimi K2</DropdownMenuRadioItem>
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
+            {/* 18+ Roast Mode Toggle */}
+            <PromptInputAction tooltip={isRoastMode ? "Disable 18+ Roast Mode" : "Enable 18+ Roast Mode"}>
+              <button
+                onClick={() => setIsRoastMode(!isRoastMode)}
+                className={cn(
+                  "h-8 px-3 py-1 text-xs rounded-full border transition-all duration-200 cursor-pointer focus:outline-none focus:ring-1 focus:ring-(--color-ring) flex items-center gap-2 font-medium",
+                  isRoastMode
+                    ? "border-red-500/50 bg-red-500/10 text-red-500 hover:bg-red-500/20"
+                    : "border-(--color-border) bg-(--color-card) text-(--color-muted-foreground) hover:bg-foreground/10"
+                )}
+                disabled={isRecording || isLoading}
+              >
+                <span className="text-sm">🔥</span>
+                <span>18+ Roast</span>
+              </button>
             </PromptInputAction>
+
+            {/* Model Selector - Hidden when roast mode is enabled */}
+            {!isRoastMode && (
+              <PromptInputAction tooltip="Select AI Model">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className="h-8 px-3 py-1 text-xs rounded-full border border-(--color-border) bg-(--color-card) text-(--color-foreground) hover:bg-foreground/10 transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-(--color-ring) flex items-center gap-2"
+                      disabled={isRecording}
+                    >
+                      <span className="truncate max-w-[120px]">
+                        {selectedModel === "gpt-oss-20b" && "GPT OSS 20B"}
+                        {selectedModel === "deepseek/deepseek-chat-v3.1" && "DeepSeek v3.1"}
+                        {selectedModel === "zhipuai/glm-4.5-air" && "GLM 4.5 Air"}
+                        {selectedModel === "moonshot/kimi-k2-0711" && "Kimi K2"}
+                      </span>
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56">
+                    <DropdownMenuLabel>AI Models</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioGroup value={selectedModel} onValueChange={setSelectedModel}>
+                      <DropdownMenuRadioItem value="gpt-oss-20b">GPT OSS 20B</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="deepseek/deepseek-chat-v3.1">DeepSeek v3.1</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="zhipuai/glm-4.5-air">GLM 4.5 Air</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="moonshot/kimi-k2-0711">Kimi K2</DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </PromptInputAction>
+            )}
 
             <PromptInputAction tooltip="Upload image or PDF">
               <button

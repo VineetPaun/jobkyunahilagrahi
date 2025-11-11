@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { openrouter, MODELS } from "@/lib/openrouter";
-import { RESUME_ASSISTANT_SYSTEM_PROMPT } from "@/lib/ai-helpers";
+import {
+    RESUME_ASSISTANT_SYSTEM_PROMPT,
+    ROAST_MODE_SYSTEM_PROMPT,
+} from "@/lib/ai-helpers";
 
 export async function POST(req: NextRequest) {
     try {
@@ -20,8 +23,15 @@ export async function POST(req: NextRequest) {
             content: string;
         }> = [];
 
+        // Check if roast mode is enabled (using the uncensored model)
+        const isRoastMode =
+            model ===
+            "cognitivecomputations/dolphin-mistral-24b-venice-edition:free";
+
         // System prompt with resume context if available
-        let systemPrompt = RESUME_ASSISTANT_SYSTEM_PROMPT;
+        let systemPrompt = isRoastMode
+            ? ROAST_MODE_SYSTEM_PROMPT
+            : RESUME_ASSISTANT_SYSTEM_PROMPT;
 
         if (resumeContext) {
             systemPrompt += `\n\n## USER'S RESUME CONTEXT:\n${resumeContext}\n\nUse this resume to provide personalized, specific advice. Reference actual content from their resume when answering questions.`;
