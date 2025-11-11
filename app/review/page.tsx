@@ -24,7 +24,7 @@ type ChatMessage = {
 
 const ASSISTANT_AVATAR = {
     fallback: "AI",
-    src: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=64&h=64&q=80&crop=faces&fit=crop",
+    src: "/robot_4179948.png",
 };
 
 const ReviewPage = () => {
@@ -523,7 +523,7 @@ const ReviewPage = () => {
                                     </ChatBubbleMessage>
                                 </ChatBubble>
                                 {!isUser && message.content && (
-                                    <div className="flex justify-start ml-10 mt-1">
+                                    <div className="flex justify-start ml-10 mt-1 mb-2">
                                         <CopyButton textToCopy={message.content} />
                                     </div>
                                 )}
